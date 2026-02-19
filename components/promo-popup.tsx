@@ -60,10 +60,10 @@ const ISSUE_ITEMS = [
   {
     label: "Image",
     Icon: Layers,
-    unfixedStatus: "good" as const,
+    unfixedStatus: "bad" as const,
     fixedStatus: "good" as const,
-    beforeMsg: "Strong visual, good contrast",
-    afterMsg: "Strong visual, good contrast",
+    beforeMsg: "No hero image — low visual impact",
+    afterMsg: "Hero image added, strong contrast",
   },
   {
     label: "Badge",
@@ -149,6 +149,7 @@ export function PromoPopup() {
   const [isScanning, setIsScanning] = useState(false)
   const [isFixed, setIsFixed] = useState(false)
   const [aiScore, setAiScore] = useState(49)
+  const [showImage, setShowImage] = useState(false)
 
   const badgeRef = useRef<HTMLSpanElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -236,6 +237,10 @@ export function PromoPopup() {
       setBody(FIXED_BODY)
       setBadge(FIXED_BADGE)
       setButtonText(FIXED_BUTTON)
+      setImageSrc("/images/popup-hero.png")
+      setImageAlt("Team collaborating around a laptop in a modern office")
+      setIsGif(false)
+      setShowImage(true)
       setAiScore(91)
       setIsFixed(true)
       setIsScanning(false)
@@ -257,6 +262,7 @@ export function PromoPopup() {
     setIsFixed(false)
     setAiScore(49)
     setIsScanning(false)
+    setShowImage(false)
   }
 
   const scoreColor = aiScore >= 80 ? "#22c55e" : aiScore >= 60 ? "#f59e0b" : "#ef4444"
@@ -311,8 +317,8 @@ export function PromoPopup() {
           {/* Scroll wrapper — image + content scroll together as one unit */}
           <div className="max-h-[560px] overflow-y-auto">
 
-          {/* Image */}
-          <div className="relative aspect-[16/9] w-full overflow-visible">
+          {/* Image — hidden until AI adds it */}
+          {showImage && <div className="relative aspect-[16/9] w-full overflow-visible">
             <div
               className="group relative h-full w-full cursor-pointer overflow-hidden"
               onClick={handleImageClick}
@@ -351,7 +357,7 @@ export function PromoPopup() {
                 </div>
               )}
             </div>
-          </div>
+          </div>}
 
           {/* Content */}
           <div>
