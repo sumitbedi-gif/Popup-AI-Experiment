@@ -12,7 +12,7 @@ import { TextEditorToolbar } from "@/components/text-editor-toolbar"
 // ── Original copy ────────────────────────────────────────────────────────────
 const ORIGINAL_HEADING = "Supercharge Your Team\u2019s Productivity"
 const ORIGINAL_BODY =
-  "Join thousands of high-performing teams already using our platform to collaborate smarter, ship faster, and achieve more together."
+  "Join thousands of high-performing teams already using our platform to collaborate smarter, ship faster, and achieve more together.\n\nOur all-in-one workspace brings every tool, task, and conversation into one place\u2014so your team spends less time switching between apps and more time doing meaningful work. From project kickoff to final delivery, every step is tracked, streamlined, and built for speed.\n\nWith real-time collaboration, AI-powered workflows, and deep integrations with 100+ tools your team already loves, you\u2019ll wonder how you ever managed without it. Teams on our platform report 40% fewer status meetings and ship 3\u00d7 faster on average."
 const ORIGINAL_BADGE = "Limited Offer"
 const ORIGINAL_BUTTON = "Get Started Free"
 
@@ -152,15 +152,15 @@ export function PromoPopup() {
 
   const badgeRef = useRef<HTMLSpanElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const bodyRef = useRef<HTMLParagraphElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLAnchorElement>(null)
 
   const closeToolbar = useCallback(() => setActiveToolbar(null), [])
 
-  function getBottomCenter(el: HTMLElement | null): { x: number; y: number } {
+  function getTopCenter(el: HTMLElement | null): { x: number; y: number } {
     if (!el) return { x: 0, y: 0 }
     const rect = el.getBoundingClientRect()
-    return { x: rect.left + rect.width / 2, y: rect.bottom }
+    return { x: rect.left + rect.width / 2, y: rect.top }
   }
 
   function handleCartoonify() {
@@ -215,7 +215,7 @@ export function PromoPopup() {
     if (activeToolbar?.type === type) {
       setActiveToolbar(null)
     } else {
-      const pos = getBottomCenter(ref.current)
+      const pos = getTopCenter(ref.current)
       setActiveToolbar({ type, pos })
     }
   }
@@ -283,7 +283,7 @@ export function PromoPopup() {
         {/* Popup Card */}
         <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl">
 
-          {/* Scan overlay */}
+          {/* Scan overlay — sits outside the scroll so it always covers the visible card */}
           {isScanning && (
             <div className="pointer-events-none absolute inset-0 z-30">
               <div className="absolute inset-0 bg-blue-950/50" />
@@ -304,6 +304,9 @@ export function PromoPopup() {
               </div>
             </div>
           )}
+
+          {/* Scroll wrapper — image + content scroll together as one unit */}
+          <div className="max-h-[560px] overflow-y-auto">
 
           {/* Image */}
           <div className="relative aspect-[16/9] w-full overflow-visible">
@@ -348,45 +351,50 @@ export function PromoPopup() {
           </div>
 
           {/* Content */}
-          <div className="flex flex-col items-center gap-3 px-8 pb-8 pt-5 text-center">
-            <span
-              ref={badgeRef}
-              onClick={(e) => handleElementClick("badge", badgeRef, e)}
-              className={`inline-flex w-fit cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary transition-all hover:bg-primary/15 ${activeToolbar?.type === "badge" ? "ring-2 ring-[#3b82f6]/50" : ""} ${textProcessing === "badge" ? "animate-pulse opacity-50" : ""}`}
-            >
-              {badge}
-            </span>
+          <div>
+            <div className="flex flex-col items-center gap-3 px-8 pb-8 pt-5 text-center">
+              <span
+                ref={badgeRef}
+                onClick={(e) => handleElementClick("badge", badgeRef, e)}
+                className={`inline-flex w-fit cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary transition-all hover:bg-primary/15 ${activeToolbar?.type === "badge" ? "ring-2 ring-[#3b82f6]/50" : ""} ${textProcessing === "badge" ? "animate-pulse opacity-50" : ""}`}
+              >
+                {badge}
+              </span>
 
-            <h2
-              ref={headingRef}
-              id="popup-heading"
-              onClick={(e) => handleElementClick("heading", headingRef, e)}
-              className={`px-2 py-1 text-balance text-2xl font-bold leading-tight tracking-tight text-card-foreground ${editableClass("heading")}`}
-            >
-              {heading}
-            </h2>
+              <h2
+                ref={headingRef}
+                id="popup-heading"
+                onClick={(e) => handleElementClick("heading", headingRef, e)}
+                className={`px-2 py-1 text-balance text-2xl font-bold leading-tight tracking-tight text-card-foreground ${editableClass("heading")}`}
+              >
+                {heading}
+              </h2>
 
-            <p
-              ref={bodyRef}
-              onClick={(e) => handleElementClick("body", bodyRef, e)}
-              className={`px-2 py-1 text-pretty text-sm leading-relaxed text-muted-foreground ${editableClass("body")}`}
-            >
-              {body}
-            </p>
+              <div
+                ref={bodyRef}
+                onClick={(e) => handleElementClick("body", bodyRef, e)}
+                className={`w-full px-2 py-1 text-left text-sm leading-relaxed text-muted-foreground ${editableClass("body")}`}
+              >
+                {body.split('\n\n').map((para, i) => (
+                  <p key={i} className={i > 0 ? 'mt-3' : ''}>{para}</p>
+                ))}
+              </div>
 
-            <a
-              ref={buttonRef}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                handleElementClick("button", buttonRef, e)
-              }}
-              className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${activeToolbar?.type === "button" ? "ring-2 ring-[#3b82f6]/50 ring-offset-2" : ""} ${textProcessing === "button" ? "animate-pulse opacity-50" : ""}`}
-            >
-              {buttonText}
-              <ArrowRight className="h-4 w-4" />
-            </a>
+              <a
+                ref={buttonRef}
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleElementClick("button", buttonRef, e)
+                }}
+                className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${activeToolbar?.type === "button" ? "ring-2 ring-[#3b82f6]/50 ring-offset-2" : ""} ${textProcessing === "button" ? "animate-pulse opacity-50" : ""}`}
+              >
+                {buttonText}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
           </div>
+          </div>{/* end scroll wrapper */}
         </div>
 
         {/* ── Issues Found pill ───────────────────────────────────────────── */}
@@ -434,7 +442,7 @@ export function PromoPopup() {
             <div className="flex items-start gap-2.5">
               <TrendingDown className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
               <p className="text-xs leading-relaxed text-amber-900">
-                <span className="font-bold">50% of users</span> closed similar popups within 3 seconds over the last 90 days.
+                <span className="font-bold">68% of your users</span> closed popups with this much text within 3 seconds. Shorter copy converts better.
               </p>
             </div>
           </div>
@@ -502,8 +510,8 @@ export function PromoPopup() {
       {/* ── Individual element toolbars ────────────────────────────────────── */}
       {activeToolbar?.type === "image" && (
         <div
-          className="fixed z-[100]"
-          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 12 }}
+          className="fixed z-[100] -translate-y-full"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 12 }}
           onClick={(e) => e.stopPropagation()}
         >
           <ImageEditorToolbar
@@ -519,8 +527,8 @@ export function PromoPopup() {
 
       {activeToolbar?.type === "badge" && (
         <div
-          className="fixed z-[100] -translate-x-1/2"
-          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          className="fixed z-[100] -translate-x-1/2 -translate-y-full"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 8 }}
           onClick={(e) => e.stopPropagation()}
         >
           <TextEditorToolbar
@@ -534,8 +542,8 @@ export function PromoPopup() {
 
       {activeToolbar?.type === "heading" && (
         <div
-          className="fixed z-[100] -translate-x-1/2"
-          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          className="fixed z-[100] -translate-x-1/2 -translate-y-full"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 8 }}
           onClick={(e) => e.stopPropagation()}
         >
           <TextEditorToolbar
@@ -549,8 +557,8 @@ export function PromoPopup() {
 
       {activeToolbar?.type === "body" && (
         <div
-          className="fixed z-[100] -translate-x-1/2"
-          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          className="fixed z-[100] -translate-x-1/2 -translate-y-full"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 8 }}
           onClick={(e) => e.stopPropagation()}
         >
           <TextEditorToolbar
@@ -564,8 +572,8 @@ export function PromoPopup() {
 
       {activeToolbar?.type === "button" && (
         <div
-          className="fixed z-[100] -translate-x-1/2"
-          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          className="fixed z-[100] -translate-x-1/2 -translate-y-full"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 8 }}
           onClick={(e) => e.stopPropagation()}
         >
           <TextEditorToolbar
