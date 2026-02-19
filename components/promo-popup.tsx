@@ -272,7 +272,7 @@ export function PromoPopup() {
     ? 91
     : 49 + ISSUE_ITEMS.filter(i => fixedItems.has(i.label)).reduce((sum, i) => sum + i.points, 0)
   const scoreColor = aiScore >= 80 ? "#22c55e" : aiScore >= 60 ? "#f59e0b" : "#ef4444"
-  const issueCount = ISSUE_ITEMS.filter(i => i.unfixedStatus !== "good").length
+  const issueCount = ISSUE_ITEMS.length
 
   // Display values — swap to originals when user holds the compare button
   const displayHeading = isComparingOriginal ? ORIGINAL_HEADING : heading
