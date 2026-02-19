@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react"
 import Image from "next/image"
 import {
   ArrowRight, RotateCcw, Sparkles, CheckCircle2, AlertTriangle,
-  XCircle, Zap, Tag, Type, AlignLeft, MousePointerClick, X, Layers, TrendingDown,
+  XCircle, Zap, Type, AlignLeft, MousePointerClick, X, Layers, TrendingDown, Eye,
 } from "lucide-react"
 import { ImageEditorToolbar } from "@/components/image-editor-toolbar"
 import { TextEditorToolbar } from "@/components/text-editor-toolbar"
@@ -13,13 +13,11 @@ import { TextEditorToolbar } from "@/components/text-editor-toolbar"
 const ORIGINAL_HEADING = "Supercharge Your Team\u2019s Productivity"
 const ORIGINAL_BODY =
   "Join thousands of high-performing teams already using our platform to collaborate smarter, ship faster, and achieve more together.\n\nOur all-in-one workspace brings every tool, task, and conversation into one place\u2014so your team spends less time switching between apps and more time doing meaningful work. From project kickoff to final delivery, every step is tracked, streamlined, and built for speed.\n\nWith real-time collaboration, AI-powered workflows, and deep integrations with 100+ tools your team already loves, you\u2019ll wonder how you ever managed without it. Teams on our platform report 40% fewer status meetings and ship 3\u00d7 faster on average."
-const ORIGINAL_BADGE = "Limited Offer"
 const ORIGINAL_BUTTON = "Get Started Free"
 
 // ── AI-fixed copy ─────────────────────────────────────────────────────────────
 const FIXED_HEADING = "Ship Faster. Collaborate Better. Start Today."
-const FIXED_BODY = "Join 10,000+ teams already delivering more with our platform."
-const FIXED_BADGE = "Limited Time"
+const FIXED_BODY = "Join 10,000+ teams already delivering more with our platform.\n\nCollaborate smarter, ship faster \u2014 starting today."
 const FIXED_BUTTON = "Claim Your Free Trial"
 
 // ── Text variant menus ────────────────────────────────────────────────────────
@@ -39,13 +37,6 @@ const bodyVariants = [
   { label: "Conversational", text: "Thousands of teams already love how easy it is to work together on our platform. Want to see what all the fuss is about?" },
 ]
 
-const badgeVariants = [
-  { label: "Polish", text: "Exclusive Offer" },
-  { label: "Urgent", text: "Ending Soon" },
-  { label: "Formal", text: "Special Promotion" },
-  { label: "Action-Oriented", text: "Act Now \u2014 Limited Spots" },
-  { label: "Conversational", text: "Just for You" },
-]
 
 const buttonVariants = [
   { label: "Action-Oriented", text: "Start Your Free Trial" },
@@ -64,14 +55,7 @@ const ISSUE_ITEMS = [
     fixedStatus: "good" as const,
     beforeMsg: "No hero image — low visual impact",
     afterMsg: "Hero image added, strong contrast",
-  },
-  {
-    label: "Badge",
-    Icon: Tag,
-    unfixedStatus: "warn" as const,
-    fixedStatus: "good" as const,
-    beforeMsg: "Generic label, low urgency",
-    afterMsg: "Urgent and specific",
+    points: 12,
   },
   {
     label: "Heading",
@@ -80,6 +64,7 @@ const ISSUE_ITEMS = [
     fixedStatus: "good" as const,
     beforeMsg: "Vague, lacks specificity",
     afterMsg: "Clear and action-driven",
+    points: 10,
   },
   {
     label: "Body",
@@ -88,6 +73,7 @@ const ISSUE_ITEMS = [
     fixedStatus: "good" as const,
     beforeMsg: "Too long, reader drops off",
     afterMsg: "Concise and scannable",
+    points: 10,
   },
   {
     label: "Button",
@@ -96,11 +82,12 @@ const ISSUE_ITEMS = [
     fixedStatus: "good" as const,
     beforeMsg: "Soft CTA, low conversion",
     afterMsg: "High-urgency CTA",
+    points: 10,
   },
 ]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type ToolbarType = "image" | "badge" | "heading" | "body" | "button"
+type ToolbarType = "image" | "heading" | "body" | "button"
 type ActiveToolbar = { type: ToolbarType; pos: { x: number; y: number } } | null
 
 // ── Score SVG ring ────────────────────────────────────────────────────────────
@@ -138,7 +125,6 @@ export function PromoPopup() {
   const [imageSrc, setImageSrc] = useState("/images/popup-hero.png")
   const [imageAlt, setImageAlt] = useState("Team collaborating around a laptop in a modern office")
   const [isGif, setIsGif] = useState(false)
-  const [badge, setBadge] = useState(ORIGINAL_BADGE)
   const [heading, setHeading] = useState(ORIGINAL_HEADING)
   const [body, setBody] = useState(ORIGINAL_BODY)
   const [buttonText, setButtonText] = useState(ORIGINAL_BUTTON)
@@ -148,10 +134,10 @@ export function PromoPopup() {
   const [showRefinePanel, setShowRefinePanel] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [isFixed, setIsFixed] = useState(false)
-  const [aiScore, setAiScore] = useState(49)
+  const [fixedItems, setFixedItems] = useState<Set<string>>(new Set())
   const [showImage, setShowImage] = useState(false)
+  const [isComparingOriginal, setIsComparingOriginal] = useState(false)
 
-  const badgeRef = useRef<HTMLSpanElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLAnchorElement>(null)
@@ -235,23 +221,38 @@ export function PromoPopup() {
     setTimeout(() => {
       setHeading(FIXED_HEADING)
       setBody(FIXED_BODY)
-      setBadge(FIXED_BADGE)
       setButtonText(FIXED_BUTTON)
       setImageSrc("/images/popup-hero.png")
       setImageAlt("Team collaborating around a laptop in a modern office")
       setIsGif(false)
       setShowImage(true)
-      setAiScore(91)
+      setFixedItems(new Set(ISSUE_ITEMS.map(i => i.label)))
       setIsFixed(true)
       setIsScanning(false)
     }, 2500)
+  }
+
+  function handleFixItem(label: string) {
+    const next = new Set(fixedItems)
+    next.add(label)
+    setFixedItems(next)
+    switch (label) {
+      case "Image":
+        setShowImage(true)
+        setImageSrc("/images/popup-hero.png")
+        setImageAlt("Team collaborating around a laptop in a modern office")
+        break
+      case "Heading": setHeading(FIXED_HEADING); break
+      case "Body":    setBody(FIXED_BODY);        break
+      case "Button":  setButtonText(FIXED_BUTTON); break
+    }
+    if (next.size === ISSUE_ITEMS.length) setIsFixed(true)
   }
 
   function handleResetDemo() {
     setImageSrc("/images/popup-hero.png")
     setImageAlt("Team collaborating around a laptop in a modern office")
     setIsGif(false)
-    setBadge(ORIGINAL_BADGE)
     setHeading(ORIGINAL_HEADING)
     setBody(ORIGINAL_BODY)
     setButtonText(ORIGINAL_BUTTON)
@@ -260,13 +261,24 @@ export function PromoPopup() {
     setTextProcessing(null)
     setShowRefinePanel(false)
     setIsFixed(false)
-    setAiScore(49)
+    setFixedItems(new Set())
     setIsScanning(false)
     setShowImage(false)
+    setIsComparingOriginal(false)
   }
 
+  // Derived score: 49 base + points for each individually fixed item
+  const aiScore = isFixed
+    ? 91
+    : 49 + ISSUE_ITEMS.filter(i => fixedItems.has(i.label)).reduce((sum, i) => sum + i.points, 0)
   const scoreColor = aiScore >= 80 ? "#22c55e" : aiScore >= 60 ? "#f59e0b" : "#ef4444"
   const issueCount = ISSUE_ITEMS.filter(i => i.unfixedStatus !== "good").length
+
+  // Display values — swap to originals when user holds the compare button
+  const displayHeading = isComparingOriginal ? ORIGINAL_HEADING : heading
+  const displayBody = isComparingOriginal ? ORIGINAL_BODY : body
+  const displayButtonText = isComparingOriginal ? ORIGINAL_BUTTON : buttonText
+  const displayShowImage = !isComparingOriginal && showImage
 
   const editableClass = (type: ToolbarType) =>
     `cursor-pointer rounded-lg transition-all hover:bg-primary/5 ${activeToolbar?.type === type ? "bg-primary/5 ring-2 ring-[#3b82f6]/50" : ""} ${textProcessing === type ? "animate-pulse opacity-50" : ""}`
@@ -318,7 +330,7 @@ export function PromoPopup() {
           <div className="max-h-[560px] overflow-y-auto">
 
           {/* Image — hidden until AI adds it */}
-          {showImage && <div className="relative aspect-[16/9] w-full overflow-visible">
+          {displayShowImage && <div className="relative aspect-[16/9] w-full overflow-visible">
             <div
               className="group relative h-full w-full cursor-pointer overflow-hidden"
               onClick={handleImageClick}
@@ -362,21 +374,13 @@ export function PromoPopup() {
           {/* Content */}
           <div>
             <div className="flex flex-col items-center gap-3 px-8 pb-8 pt-5 text-center">
-              <span
-                ref={badgeRef}
-                onClick={(e) => handleElementClick("badge", badgeRef, e)}
-                className={`inline-flex w-fit cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary transition-all hover:bg-primary/15 ${activeToolbar?.type === "badge" ? "ring-2 ring-[#3b82f6]/50" : ""} ${textProcessing === "badge" ? "animate-pulse opacity-50" : ""}`}
-              >
-                {badge}
-              </span>
-
               <h2
                 ref={headingRef}
                 id="popup-heading"
                 onClick={(e) => handleElementClick("heading", headingRef, e)}
                 className={`px-2 py-1 text-balance text-2xl font-bold leading-tight tracking-tight text-card-foreground ${editableClass("heading")}`}
               >
-                {heading}
+                {displayHeading}
               </h2>
 
               <div
@@ -384,7 +388,7 @@ export function PromoPopup() {
                 onClick={(e) => handleElementClick("body", bodyRef, e)}
                 className={`w-full px-2 py-1 text-left text-sm leading-relaxed text-muted-foreground ${editableClass("body")}`}
               >
-                {body.split('\n\n').map((para, i) => (
+                {displayBody.split('\n\n').map((para, i) => (
                   <p key={i} className={i > 0 ? 'mt-3' : ''}>{para}</p>
                 ))}
               </div>
@@ -398,7 +402,7 @@ export function PromoPopup() {
                 }}
                 className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${activeToolbar?.type === "button" ? "ring-2 ring-[#3b82f6]/50 ring-offset-2" : ""} ${textProcessing === "button" ? "animate-pulse opacity-50" : ""}`}
               >
-                {buttonText}
+                {displayButtonText}
                 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
@@ -416,12 +420,25 @@ export function PromoPopup() {
                 <Sparkles className="h-4 w-4 text-blue-500" />
                 <span className="text-sm font-semibold text-gray-900">Content Health</span>
               </div>
-              <button
-                onClick={() => setShowRefinePanel(false)}
-                className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                {isFixed && (
+                  <button
+                    onMouseDown={() => setIsComparingOriginal(true)}
+                    onMouseUp={() => setIsComparingOriginal(false)}
+                    onMouseLeave={() => setIsComparingOriginal(false)}
+                    title="Hold to compare original"
+                    className={`rounded-full p-1 transition-colors hover:bg-gray-100 ${isComparingOriginal ? "bg-blue-50 text-blue-500" : "text-gray-400 hover:text-gray-600"}`}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowRefinePanel(false)}
+                  className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Insight banner */}
@@ -442,23 +459,28 @@ export function PromoPopup() {
               </span>
             </div>
 
-            {/* Issue tiles — 2 per row */}
+            {/* Issue tiles — 2 per row, each clickable to fix individually */}
             <div className="grid grid-cols-2 gap-2 px-4 pb-4">
               {ISSUE_ITEMS.map(({ label, Icon, unfixedStatus, fixedStatus, beforeMsg, afterMsg }, index) => {
-                const status = isFixed ? fixedStatus : unfixedStatus
-                const message = isFixed ? afterMsg : beforeMsg
+                const itemFixed = isFixed || fixedItems.has(label)
+                const status = itemFixed ? fixedStatus : unfixedStatus
+                const message = itemFixed ? afterMsg : beforeMsg
                 return (
                   <div
                     key={label}
-                    className={`item-fade-in rounded-lg border p-2.5 ${
-                      status === "good" ? "border-green-100 bg-green-50" :
-                      status === "warn" ? "border-amber-100 bg-amber-50" :
-                      "border-red-100 bg-red-50"
+                    onClick={() => { if (!itemFixed) handleFixItem(label) }}
+                    className={`item-fade-in rounded-lg border p-2.5 transition-all ${
+                      itemFixed
+                        ? "border-green-100 bg-green-50 cursor-default"
+                        : status === "warn"
+                        ? "border-amber-100 bg-amber-50 cursor-pointer hover:brightness-95 hover:shadow-sm"
+                        : "border-red-100 bg-red-50 cursor-pointer hover:brightness-95 hover:shadow-sm"
                     }`}
                     style={{ animationDelay: `${index * 0.11}s` }}
+                    title={itemFixed ? undefined : "Click to fix this issue"}
                   >
                     <div className="mb-1 flex items-center gap-1.5">
-                      {status === "good"
+                      {itemFixed
                         ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />
                         : status === "warn"
                         ? <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
@@ -533,22 +555,7 @@ export function PromoPopup() {
         </div>
       )}
 
-      {activeToolbar?.type === "badge" && (
-        <div
-          className="fixed z-[100] -translate-x-1/2 -translate-y-full"
-          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 8 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <TextEditorToolbar
-            variants={badgeVariants}
-            onSelect={(text) => handleTextRewrite("badge", text, setBadge)}
-            onClose={closeToolbar}
-            isProcessing={textProcessing === "badge"}
-          />
-        </div>
-      )}
-
-      {activeToolbar?.type === "heading" && (
+{activeToolbar?.type === "heading" && (
         <div
           className="fixed z-[100] -translate-x-1/2 -translate-y-full"
           style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y - 8 }}
