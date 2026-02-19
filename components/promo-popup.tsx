@@ -1,0 +1,590 @@
+"use client"
+
+import { useState, useCallback, useRef } from "react"
+import Image from "next/image"
+import {
+  ArrowRight, RotateCcw, Sparkles, CheckCircle2, AlertTriangle,
+  XCircle, Zap, Tag, Type, AlignLeft, MousePointerClick, X, Layers, TrendingDown,
+} from "lucide-react"
+import { ImageEditorToolbar } from "@/components/image-editor-toolbar"
+import { TextEditorToolbar } from "@/components/text-editor-toolbar"
+
+// ── Original copy ────────────────────────────────────────────────────────────
+const ORIGINAL_HEADING = "Supercharge Your Team\u2019s Productivity"
+const ORIGINAL_BODY =
+  "Join thousands of high-performing teams already using our platform to collaborate smarter, ship faster, and achieve more together."
+const ORIGINAL_BADGE = "Limited Offer"
+const ORIGINAL_BUTTON = "Get Started Free"
+
+// ── AI-fixed copy ─────────────────────────────────────────────────────────────
+const FIXED_HEADING = "Ship Faster. Collaborate Better. Start Today."
+const FIXED_BODY = "Join 10,000+ teams already delivering more with our platform."
+const FIXED_BADGE = "Limited Time"
+const FIXED_BUTTON = "Claim Your Free Trial"
+
+// ── Text variant menus ────────────────────────────────────────────────────────
+const headingVariants = [
+  { label: "Polish", text: "Elevate Your Team\u2019s Performance to New Heights" },
+  { label: "Summarize", text: "Work Smarter, Ship Faster" },
+  { label: "Formal", text: "Enhance Organizational Productivity and Collaboration" },
+  { label: "Action-Oriented", text: "Start Building Better Products With Your Team Today" },
+  { label: "Conversational", text: "Ready to Get More Done With Your Team?" },
+]
+
+const bodyVariants = [
+  { label: "Polish", text: "Trusted by thousands of world-class teams, our platform transforms the way you collaborate, enabling faster delivery and smarter workflows." },
+  { label: "Summarize", text: "A smarter platform for teams that want to collaborate better and ship faster." },
+  { label: "Formal", text: "Our enterprise-grade platform empowers organizations to optimize collaboration workflows, accelerate product delivery, and drive measurable outcomes." },
+  { label: "Action-Oriented", text: "Stop wasting time on inefficient workflows. Join 10,000+ teams who already collaborate smarter and ship 3x faster with our platform." },
+  { label: "Conversational", text: "Thousands of teams already love how easy it is to work together on our platform. Want to see what all the fuss is about?" },
+]
+
+const badgeVariants = [
+  { label: "Polish", text: "Exclusive Offer" },
+  { label: "Urgent", text: "Ending Soon" },
+  { label: "Formal", text: "Special Promotion" },
+  { label: "Action-Oriented", text: "Act Now \u2014 Limited Spots" },
+  { label: "Conversational", text: "Just for You" },
+]
+
+const buttonVariants = [
+  { label: "Action-Oriented", text: "Start Your Free Trial" },
+  { label: "Urgent", text: "Claim Your Spot Now" },
+  { label: "Casual", text: "Let\u2019s Go!" },
+  { label: "Value-Driven", text: "Unlock Your Potential" },
+  { label: "Conversational", text: "See It in Action" },
+]
+
+// ── AI issue checklist ────────────────────────────────────────────────────────
+const ISSUE_ITEMS = [
+  {
+    label: "Image",
+    Icon: Layers,
+    unfixedStatus: "good" as const,
+    fixedStatus: "good" as const,
+    beforeMsg: "Strong visual, good contrast",
+    afterMsg: "Strong visual, good contrast",
+  },
+  {
+    label: "Badge",
+    Icon: Tag,
+    unfixedStatus: "warn" as const,
+    fixedStatus: "good" as const,
+    beforeMsg: "Generic label, low urgency",
+    afterMsg: "Urgent and specific",
+  },
+  {
+    label: "Heading",
+    Icon: Type,
+    unfixedStatus: "bad" as const,
+    fixedStatus: "good" as const,
+    beforeMsg: "Vague, lacks specificity",
+    afterMsg: "Clear and action-driven",
+  },
+  {
+    label: "Body",
+    Icon: AlignLeft,
+    unfixedStatus: "bad" as const,
+    fixedStatus: "good" as const,
+    beforeMsg: "Too long, reader drops off",
+    afterMsg: "Concise and scannable",
+  },
+  {
+    label: "Button",
+    Icon: MousePointerClick,
+    unfixedStatus: "warn" as const,
+    fixedStatus: "good" as const,
+    beforeMsg: "Soft CTA, low conversion",
+    afterMsg: "High-urgency CTA",
+  },
+]
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+type ToolbarType = "image" | "badge" | "heading" | "body" | "button"
+type ActiveToolbar = { type: ToolbarType; pos: { x: number; y: number } } | null
+
+// ── Score SVG ring ────────────────────────────────────────────────────────────
+const SCORE_RADIUS = 36
+const SCORE_CIRCUMFERENCE = 2 * Math.PI * SCORE_RADIUS
+
+
+function ScoreRingLight({ score, color, size = 88 }: { score: number; color: string; size?: number }) {
+  const dashoffset = SCORE_CIRCUMFERENCE * (1 - score / 100)
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r={SCORE_RADIUS} fill="none" stroke="#f3f4f6" strokeWidth="6" />
+      <circle
+        cx="40" cy="40" r={SCORE_RADIUS}
+        fill="none"
+        stroke={color}
+        strokeWidth="6"
+        strokeDasharray={SCORE_CIRCUMFERENCE}
+        strokeDashoffset={dashoffset}
+        strokeLinecap="round"
+        transform="rotate(-90 40 40)"
+        style={{ transition: "stroke-dashoffset 1s ease, stroke 1s ease" }}
+      />
+      <text x="40" y="47" textAnchor="middle" fontSize="20" fontWeight="bold" fill={color}>{score}</text>
+    </svg>
+  )
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export function PromoPopup() {
+  // Existing state
+  const [activeToolbar, setActiveToolbar] = useState<ActiveToolbar>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingLabel, setProcessingLabel] = useState("")
+  const [imageSrc, setImageSrc] = useState("/images/popup-hero.png")
+  const [imageAlt, setImageAlt] = useState("Team collaborating around a laptop in a modern office")
+  const [isGif, setIsGif] = useState(false)
+  const [badge, setBadge] = useState(ORIGINAL_BADGE)
+  const [heading, setHeading] = useState(ORIGINAL_HEADING)
+  const [body, setBody] = useState(ORIGINAL_BODY)
+  const [buttonText, setButtonText] = useState(ORIGINAL_BUTTON)
+  const [textProcessing, setTextProcessing] = useState<ToolbarType | null>(null)
+
+  // AI Refine state
+  const [showRefinePanel, setShowRefinePanel] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [isFixed, setIsFixed] = useState(false)
+  const [aiScore, setAiScore] = useState(49)
+
+  const badgeRef = useRef<HTMLSpanElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const bodyRef = useRef<HTMLParagraphElement>(null)
+  const buttonRef = useRef<HTMLAnchorElement>(null)
+
+  const closeToolbar = useCallback(() => setActiveToolbar(null), [])
+
+  function getBottomCenter(el: HTMLElement | null): { x: number; y: number } {
+    if (!el) return { x: 0, y: 0 }
+    const rect = el.getBoundingClientRect()
+    return { x: rect.left + rect.width / 2, y: rect.bottom }
+  }
+
+  function handleCartoonify() {
+    setIsProcessing(true)
+    setProcessingLabel("Cartoonifying...")
+    setActiveToolbar(null)
+    setTimeout(() => {
+      setImageSrc("/images/popup-hero-cartoon.png")
+      setImageAlt("Cartoon illustration of team collaborating")
+      setIsGif(false)
+      setIsProcessing(false)
+    }, 2500)
+  }
+
+  function handleConvertToGif() {
+    if (isGif) { setActiveToolbar(null); return }
+    setIsProcessing(true)
+    setProcessingLabel("Converting to GIF...")
+    setActiveToolbar(null)
+    const isCartoon = imageSrc === "/images/popup-hero-cartoon.png"
+    setTimeout(() => {
+      if (isCartoon) {
+        setImageSrc("/images/popup-hero-cartoon.gif")
+        setImageAlt("Animated cartoon GIF of team collaborating")
+      } else {
+        setImageSrc("/images/popup-hero-stock.gif")
+        setImageAlt("Animated GIF of team collaborating")
+      }
+      setIsGif(true)
+      setIsProcessing(false)
+    }, 2500)
+  }
+
+  function handleImageReset() {
+    setImageSrc("/images/popup-hero.png")
+    setImageAlt("Team collaborating around a laptop in a modern office")
+    setIsGif(false)
+    setActiveToolbar(null)
+  }
+
+  function handleImageClick(e: React.MouseEvent) {
+    if (isProcessing) return
+    e.stopPropagation()
+    setActiveToolbar(
+      activeToolbar?.type === "image" ? null : { type: "image", pos: { x: e.clientX, y: e.clientY } }
+    )
+  }
+
+  function handleElementClick(type: ToolbarType, ref: React.RefObject<HTMLElement | null>, e: React.MouseEvent) {
+    if (textProcessing) return
+    e.stopPropagation()
+    if (activeToolbar?.type === type) {
+      setActiveToolbar(null)
+    } else {
+      const pos = getBottomCenter(ref.current)
+      setActiveToolbar({ type, pos })
+    }
+  }
+
+  function handleTextRewrite(type: ToolbarType, text: string, setter: (t: string) => void) {
+    setActiveToolbar(null)
+    setTextProcessing(type)
+    setTimeout(() => {
+      setter(text)
+      setTextProcessing(null)
+    }, 1200)
+  }
+
+  function handleFixWithAI() {
+    setIsScanning(true)
+    setTimeout(() => {
+      setHeading(FIXED_HEADING)
+      setBody(FIXED_BODY)
+      setBadge(FIXED_BADGE)
+      setButtonText(FIXED_BUTTON)
+      setAiScore(91)
+      setIsFixed(true)
+      setIsScanning(false)
+    }, 2500)
+  }
+
+  function handleResetDemo() {
+    setImageSrc("/images/popup-hero.png")
+    setImageAlt("Team collaborating around a laptop in a modern office")
+    setIsGif(false)
+    setBadge(ORIGINAL_BADGE)
+    setHeading(ORIGINAL_HEADING)
+    setBody(ORIGINAL_BODY)
+    setButtonText(ORIGINAL_BUTTON)
+    setActiveToolbar(null)
+    setIsProcessing(false)
+    setTextProcessing(null)
+    setShowRefinePanel(false)
+    setIsFixed(false)
+    setAiScore(49)
+    setIsScanning(false)
+  }
+
+  const scoreColor = aiScore >= 80 ? "#22c55e" : aiScore >= 60 ? "#f59e0b" : "#ef4444"
+  const issueCount = ISSUE_ITEMS.filter(i => i.unfixedStatus !== "good").length
+
+  const editableClass = (type: ToolbarType) =>
+    `cursor-pointer rounded-lg transition-all hover:bg-primary/5 ${activeToolbar?.type === type ? "bg-primary/5 ring-2 ring-[#3b82f6]/50" : ""} ${textProcessing === type ? "animate-pulse opacity-50" : ""}`
+
+  return (
+    <>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="popup-heading"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-4"
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/12 backdrop-blur-[3px]"
+          aria-hidden="true"
+          onClick={closeToolbar}
+        />
+
+        {/* Popup Card */}
+        <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl">
+
+          {/* Scan overlay */}
+          {isScanning && (
+            <div className="pointer-events-none absolute inset-0 z-30">
+              <div className="absolute inset-0 bg-blue-950/50" />
+              <div className="scan-beam" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-8 py-5 backdrop-blur-md">
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="h-2 w-2 animate-bounce rounded-full bg-blue-400"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs font-semibold tracking-wide text-white">Analyzing &amp; rewriting content…</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image */}
+          <div className="relative aspect-[16/9] w-full overflow-visible">
+            <div
+              className="group relative h-full w-full cursor-pointer overflow-hidden"
+              onClick={handleImageClick}
+            >
+              <Image
+                src={imageSrc}
+                alt={imageAlt}
+                fill
+                className="object-cover transition-all duration-500"
+                priority
+                unoptimized={isGif}
+                key={imageSrc}
+              />
+              {isProcessing && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-foreground/60 backdrop-blur-sm">
+                  <div className="relative h-10 w-10">
+                    <div className="absolute inset-0 animate-ping rounded-full bg-[#3b82f6]/30" />
+                    <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[#3b82f6]" />
+                    <div
+                      className="absolute inset-1.5 animate-spin rounded-full border-2 border-transparent border-t-[#06b6d4]"
+                      style={{ animationDirection: "reverse", animationDuration: "0.8s" }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-white">{processingLabel}</span>
+                </div>
+              )}
+              {activeToolbar?.type === "image" && !isProcessing && (
+                <div className="absolute inset-0 ring-2 ring-inset ring-[#3b82f6]/50" />
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
+              {!isProcessing && activeToolbar?.type !== "image" && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  <span className="rounded-full border border-white/20 bg-white/15 px-4 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md">
+                    Click to Edit
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex flex-col items-center gap-3 px-8 pb-8 pt-5 text-center">
+            <span
+              ref={badgeRef}
+              onClick={(e) => handleElementClick("badge", badgeRef, e)}
+              className={`inline-flex w-fit cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary transition-all hover:bg-primary/15 ${activeToolbar?.type === "badge" ? "ring-2 ring-[#3b82f6]/50" : ""} ${textProcessing === "badge" ? "animate-pulse opacity-50" : ""}`}
+            >
+              {badge}
+            </span>
+
+            <h2
+              ref={headingRef}
+              id="popup-heading"
+              onClick={(e) => handleElementClick("heading", headingRef, e)}
+              className={`px-2 py-1 text-balance text-2xl font-bold leading-tight tracking-tight text-card-foreground ${editableClass("heading")}`}
+            >
+              {heading}
+            </h2>
+
+            <p
+              ref={bodyRef}
+              onClick={(e) => handleElementClick("body", bodyRef, e)}
+              className={`px-2 py-1 text-pretty text-sm leading-relaxed text-muted-foreground ${editableClass("body")}`}
+            >
+              {body}
+            </p>
+
+            <a
+              ref={buttonRef}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleElementClick("button", buttonRef, e)
+              }}
+              className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${activeToolbar?.type === "button" ? "ring-2 ring-[#3b82f6]/50 ring-offset-2" : ""} ${textProcessing === "button" ? "animate-pulse opacity-50" : ""}`}
+            >
+              {buttonText}
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+
+        {/* ── Issues Found pill ───────────────────────────────────────────── */}
+        <button onClick={() => setShowRefinePanel((v) => !v)} className="relative z-10 cursor-pointer">
+          {!isFixed ? (
+            <span className="ai-pill-wrapper">
+              <span className="ai-spin-border" />
+              <span className="relative z-10 flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-800">
+                Issues Found
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
+                  {issueCount}
+                </span>
+              </span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-2 rounded-full border border-green-200 bg-white px-5 py-2.5 text-sm font-semibold text-green-700">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              All Issues Fixed
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ── Issues Analysis Panel ───────────────────────────────────────────── */}
+      {showRefinePanel && (
+        <div className="fixed right-6 top-1/2 z-[90] -translate-y-1/2">
+        <div className="panel-in w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
+
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-semibold text-gray-900">Content Health</span>
+            </div>
+            <button
+              onClick={() => setShowRefinePanel(false)}
+              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Insight banner */}
+          <div className="border-b border-amber-100 bg-amber-50 px-4 py-3">
+            <div className="flex items-start gap-2.5">
+              <TrendingDown className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
+              <p className="text-xs leading-relaxed text-amber-900">
+                <span className="font-bold">50% of users</span> closed similar popups within 3 seconds over the last 90 days.
+              </p>
+            </div>
+          </div>
+
+          {/* Score ring */}
+          <div className="flex flex-col items-center gap-1.5 py-6">
+            <ScoreRingLight score={aiScore} color={scoreColor} size={88} />
+            <span className="text-xs font-medium text-gray-400">
+              {isFixed ? "Excellent" : "Needs Improvement"}
+            </span>
+          </div>
+
+          {/* Issue list */}
+          <div className="space-y-3 px-5 pb-5">
+            {ISSUE_ITEMS.map(({ label, Icon, unfixedStatus, fixedStatus, beforeMsg, afterMsg }, index) => {
+              const status = isFixed ? fixedStatus : unfixedStatus
+              const message = isFixed ? afterMsg : beforeMsg
+              return (
+                <div key={label} className="item-fade-in flex items-start gap-3" style={{ animationDelay: `${index * 0.11}s` }}>
+                  <div className={`mt-0.5 flex-shrink-0 rounded-full p-1 ${
+                    status === "good" ? "bg-green-50 text-green-500" :
+                    status === "warn" ? "bg-amber-50 text-amber-500" :
+                    "bg-red-50 text-red-500"
+                  }`}>
+                    {status === "good"
+                      ? <CheckCircle2 className="h-3.5 w-3.5" />
+                      : status === "warn"
+                      ? <AlertTriangle className="h-3.5 w-3.5" />
+                      : <XCircle className="h-3.5 w-3.5" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs font-semibold text-gray-700">{label}</span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-500">{message}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* CTA */}
+          <div className="px-5 pb-5">
+            {!isFixed ? (
+              <button
+                onClick={handleFixWithAI}
+                disabled={isScanning}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-105 disabled:opacity-70"
+              >
+                <Zap className="h-4 w-4" />
+                {isScanning ? "Rewriting…" : "Fix with AI"}
+              </button>
+            ) : (
+              <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+                <CheckCircle2 className="h-4 w-4" />
+                All issues resolved!
+              </div>
+            )}
+          </div>
+        </div>
+        </div>
+      )}
+
+      {/* ── Individual element toolbars ────────────────────────────────────── */}
+      {activeToolbar?.type === "image" && (
+        <div
+          className="fixed z-[100]"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 12 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ImageEditorToolbar
+            onCartoonify={handleCartoonify}
+            onConvertToGif={handleConvertToGif}
+            onReset={handleImageReset}
+            onClose={closeToolbar}
+            isProcessing={isProcessing}
+            processingLabel={processingLabel}
+          />
+        </div>
+      )}
+
+      {activeToolbar?.type === "badge" && (
+        <div
+          className="fixed z-[100] -translate-x-1/2"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TextEditorToolbar
+            variants={badgeVariants}
+            onSelect={(text) => handleTextRewrite("badge", text, setBadge)}
+            onClose={closeToolbar}
+            isProcessing={textProcessing === "badge"}
+          />
+        </div>
+      )}
+
+      {activeToolbar?.type === "heading" && (
+        <div
+          className="fixed z-[100] -translate-x-1/2"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TextEditorToolbar
+            variants={headingVariants}
+            onSelect={(text) => handleTextRewrite("heading", text, setHeading)}
+            onClose={closeToolbar}
+            isProcessing={textProcessing === "heading"}
+          />
+        </div>
+      )}
+
+      {activeToolbar?.type === "body" && (
+        <div
+          className="fixed z-[100] -translate-x-1/2"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TextEditorToolbar
+            variants={bodyVariants}
+            onSelect={(text) => handleTextRewrite("body", text, setBody)}
+            onClose={closeToolbar}
+            isProcessing={textProcessing === "body"}
+          />
+        </div>
+      )}
+
+      {activeToolbar?.type === "button" && (
+        <div
+          className="fixed z-[100] -translate-x-1/2"
+          style={{ left: activeToolbar.pos.x, top: activeToolbar.pos.y + 8 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TextEditorToolbar
+            variants={buttonVariants}
+            onSelect={(text) => handleTextRewrite("button", text, setButtonText)}
+            onClose={closeToolbar}
+            isProcessing={textProcessing === "button"}
+          />
+        </div>
+      )}
+
+      {/* ── Reset Demo ─────────────────────────────────────────────────────── */}
+      <button
+        onClick={handleResetDemo}
+        className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-full bg-foreground/80 px-5 py-2.5 text-sm font-medium text-background shadow-lg backdrop-blur-sm transition-all hover:bg-foreground/90"
+      >
+        <RotateCcw className="h-4 w-4" />
+        Reset Demo
+      </button>
+    </>
+  )
+}
