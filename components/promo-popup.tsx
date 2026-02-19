@@ -280,11 +280,11 @@ export function PromoPopup() {
           onClick={closeToolbar}
         />
 
-        {/* Popup + Panel row */}
-        <div className="relative z-10 flex items-start gap-3">
+        {/* Popup wrapper — relative so the panel can anchor off it */}
+        <div className="relative z-10 w-full max-w-lg">
 
         {/* Popup Card */}
-        <div className="relative w-[32rem] shrink-0 overflow-hidden rounded-2xl bg-card shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xl">
 
           {/* Scan overlay — sits outside the scroll so it always covers the visible card */}
           {isScanning && (
@@ -400,85 +400,85 @@ export function PromoPopup() {
           </div>{/* end scroll wrapper */}
         </div>{/* end popup card */}
 
-        {/* Compact panel — adjacent to popup, top-aligned */}
+        {/* Panel — floats to the right of the popup without shifting it */}
         {showRefinePanel && (
-          <div className="panel-in w-60 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
+          <div className="panel-in absolute left-full top-0 ml-3 w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
 
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-                <span className="text-xs font-semibold text-gray-900">Content Health</span>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-semibold text-gray-900">Content Health</span>
               </div>
               <button
                 onClick={() => setShowRefinePanel(false)}
                 className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Insight banner */}
-            <div className="border-b border-amber-100 bg-amber-50 px-3 py-2">
-              <div className="flex items-start gap-1.5">
-                <TrendingDown className="mt-0.5 h-3 w-3 flex-shrink-0 text-amber-600" />
-                <p className="text-[10px] leading-tight text-amber-900">
-                  <span className="font-bold">68% of users</span> closed popups with this much text within 3 seconds.
+            <div className="border-b border-amber-100 bg-amber-50 px-4 py-3">
+              <div className="flex items-start gap-2">
+                <TrendingDown className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
+                <p className="text-xs leading-relaxed text-amber-900">
+                  <span className="font-bold">68% of users</span> closed popups with this much text within 3 seconds. Shorter copy converts better.
                 </p>
               </div>
             </div>
 
             {/* Score ring */}
-            <div className="flex flex-col items-center gap-1 py-4">
-              <ScoreRingLight score={aiScore} color={scoreColor} size={72} />
-              <span className="text-[10px] font-medium text-gray-400">
+            <div className="flex flex-col items-center gap-1.5 py-5">
+              <ScoreRingLight score={aiScore} color={scoreColor} size={88} />
+              <span className="text-xs font-medium text-gray-400">
                 {isFixed ? "Excellent" : "Needs Improvement"}
               </span>
             </div>
 
             {/* Issue tiles — 2 per row */}
-            <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+            <div className="grid grid-cols-2 gap-2 px-4 pb-4">
               {ISSUE_ITEMS.map(({ label, Icon, unfixedStatus, fixedStatus, beforeMsg, afterMsg }, index) => {
                 const status = isFixed ? fixedStatus : unfixedStatus
                 const message = isFixed ? afterMsg : beforeMsg
                 return (
                   <div
                     key={label}
-                    className={`item-fade-in rounded-lg border p-2 ${
+                    className={`item-fade-in rounded-lg border p-2.5 ${
                       status === "good" ? "border-green-100 bg-green-50" :
                       status === "warn" ? "border-amber-100 bg-amber-50" :
                       "border-red-100 bg-red-50"
                     }`}
                     style={{ animationDelay: `${index * 0.11}s` }}
                   >
-                    <div className="mb-1 flex items-center gap-1">
+                    <div className="mb-1 flex items-center gap-1.5">
                       {status === "good"
-                        ? <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
+                        ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />
                         : status === "warn"
-                        ? <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />
-                        : <XCircle className="h-3 w-3 shrink-0 text-red-500" />}
-                      <span className="truncate text-[11px] font-semibold text-gray-700">{label}</span>
+                        ? <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                        : <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />}
+                      <span className="truncate text-xs font-semibold text-gray-700">{label}</span>
                     </div>
-                    <p className="text-[10px] leading-tight text-gray-500">{message}</p>
+                    <p className="text-[11px] leading-snug text-gray-500">{message}</p>
                   </div>
                 )
               })}
             </div>
 
             {/* CTA */}
-            <div className="px-3 pb-3">
+            <div className="px-4 pb-4">
               {!isFixed ? (
                 <button
                   onClick={handleFixWithAI}
                   disabled={isScanning}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-105 disabled:opacity-70"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-105 disabled:opacity-70"
                 >
-                  <Zap className="h-3.5 w-3.5" />
+                  <Zap className="h-4 w-4" />
                   {isScanning ? "Rewriting…" : "Fix with AI"}
                 </button>
               ) : (
-                <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-2.5 text-xs font-semibold text-green-700">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+                  <CheckCircle2 className="h-4 w-4" />
                   All issues resolved!
                 </div>
               )}
@@ -486,7 +486,7 @@ export function PromoPopup() {
           </div>
         )}
 
-        </div>{/* end popup+panel row */}
+        </div>{/* end popup wrapper */}
 
         {/* ── Issues Found pill ───────────────────────────────────────────── */}
         <button onClick={() => setShowRefinePanel((v) => !v)} className="relative z-10 cursor-pointer">
