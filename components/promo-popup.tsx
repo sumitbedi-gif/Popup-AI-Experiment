@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef } from "react"
+import { createPortal } from "react-dom"
 import Image from "next/image"
 import {
   ArrowRight, RotateCcw, Sparkles, CheckCircle2, AlertTriangle,
@@ -16,8 +17,8 @@ const ORIGINAL_BODY =
 const ORIGINAL_BUTTON = "Get Started Free"
 
 // ── AI-fixed copy ─────────────────────────────────────────────────────────────
-const FIXED_HEADING = "Ship Faster. Collaborate Better. Start Today."
-const FIXED_BODY = "Join 10,000+ teams already delivering more with our platform.\n\nCollaborate smarter, ship faster \u2014 starting today."
+const FIXED_HEADING = "Work Smarter, Ship Faster"
+const FIXED_BODY = "Trusted by thousands of world-class teams, our platform transforms the way you collaborate, enabling faster delivery and smarter workflows."
 const FIXED_BUTTON = "Claim Your Free Trial"
 
 // ── Text variant menus ────────────────────────────────────────────────────────
@@ -117,7 +118,23 @@ function ScoreRingLight({ score, color, size = 88 }: { score: number; color: str
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function PromoPopup() {
+interface PromoPopupProps {
+  /** Extra classes appended to the outermost fixed container (e.g. pt-20 for editor breathing room) */
+  containerClassName?: string
+  /** DOM element to portal the health panel into (used by the editor right sidebar) */
+  healthPanelPortal?: Element | null
+  /** Called when the Issues Found pill is clicked */
+  onIssuesPillClick?: () => void
+  /** Called when the health panel X button is clicked */
+  onIssuesPanelClose?: () => void
+}
+
+export function PromoPopup({
+  containerClassName,
+  healthPanelPortal,
+  onIssuesPillClick,
+  onIssuesPanelClose,
+}: PromoPopupProps = {}) {
   // Existing state
   const [activeToolbar, setActiveToolbar] = useState<ActiveToolbar>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -289,7 +306,7 @@ export function PromoPopup() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="popup-heading"
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-4"
+        className={containerClassName ?? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-4"}
       >
         {/* Backdrop */}
         <div
