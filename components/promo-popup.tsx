@@ -280,8 +280,11 @@ export function PromoPopup() {
           onClick={closeToolbar}
         />
 
+        {/* Popup + Panel row */}
+        <div className="relative z-10 flex items-start gap-3">
+
         {/* Popup Card */}
-        <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl">
+        <div className="relative w-[32rem] shrink-0 overflow-hidden rounded-2xl bg-card shadow-2xl">
 
           {/* Scan overlay — sits outside the scroll so it always covers the visible card */}
           {isScanning && (
@@ -395,7 +398,95 @@ export function PromoPopup() {
             </div>
           </div>
           </div>{/* end scroll wrapper */}
-        </div>
+        </div>{/* end popup card */}
+
+        {/* Compact panel — adjacent to popup, top-aligned */}
+        {showRefinePanel && (
+          <div className="panel-in w-60 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-xs font-semibold text-gray-900">Content Health</span>
+              </div>
+              <button
+                onClick={() => setShowRefinePanel(false)}
+                className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Insight banner */}
+            <div className="border-b border-amber-100 bg-amber-50 px-3 py-2">
+              <div className="flex items-start gap-1.5">
+                <TrendingDown className="mt-0.5 h-3 w-3 flex-shrink-0 text-amber-600" />
+                <p className="text-[10px] leading-tight text-amber-900">
+                  <span className="font-bold">68% of users</span> closed popups with this much text within 3 seconds.
+                </p>
+              </div>
+            </div>
+
+            {/* Score ring */}
+            <div className="flex flex-col items-center gap-1 py-4">
+              <ScoreRingLight score={aiScore} color={scoreColor} size={72} />
+              <span className="text-[10px] font-medium text-gray-400">
+                {isFixed ? "Excellent" : "Needs Improvement"}
+              </span>
+            </div>
+
+            {/* Issue tiles — 2 per row */}
+            <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+              {ISSUE_ITEMS.map(({ label, Icon, unfixedStatus, fixedStatus, beforeMsg, afterMsg }, index) => {
+                const status = isFixed ? fixedStatus : unfixedStatus
+                const message = isFixed ? afterMsg : beforeMsg
+                return (
+                  <div
+                    key={label}
+                    className={`item-fade-in rounded-lg border p-2 ${
+                      status === "good" ? "border-green-100 bg-green-50" :
+                      status === "warn" ? "border-amber-100 bg-amber-50" :
+                      "border-red-100 bg-red-50"
+                    }`}
+                    style={{ animationDelay: `${index * 0.11}s` }}
+                  >
+                    <div className="mb-1 flex items-center gap-1">
+                      {status === "good"
+                        ? <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
+                        : status === "warn"
+                        ? <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />
+                        : <XCircle className="h-3 w-3 shrink-0 text-red-500" />}
+                      <span className="truncate text-[11px] font-semibold text-gray-700">{label}</span>
+                    </div>
+                    <p className="text-[10px] leading-tight text-gray-500">{message}</p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* CTA */}
+            <div className="px-3 pb-3">
+              {!isFixed ? (
+                <button
+                  onClick={handleFixWithAI}
+                  disabled={isScanning}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-105 disabled:opacity-70"
+                >
+                  <Zap className="h-3.5 w-3.5" />
+                  {isScanning ? "Rewriting…" : "Fix with AI"}
+                </button>
+              ) : (
+                <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-2.5 text-xs font-semibold text-green-700">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  All issues resolved!
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        </div>{/* end popup+panel row */}
 
         {/* ── Issues Found pill ───────────────────────────────────────────── */}
         <button onClick={() => setShowRefinePanel((v) => !v)} className="relative z-10 cursor-pointer">
@@ -417,95 +508,6 @@ export function PromoPopup() {
           )}
         </button>
       </div>
-
-      {/* ── Issues Analysis Panel ───────────────────────────────────────────── */}
-      {showRefinePanel && (
-        <div className="fixed right-6 top-1/2 z-[90] -translate-y-1/2">
-        <div className="panel-in w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
-
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-semibold text-gray-900">Content Health</span>
-            </div>
-            <button
-              onClick={() => setShowRefinePanel(false)}
-              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Insight banner */}
-          <div className="border-b border-amber-100 bg-amber-50 px-4 py-3">
-            <div className="flex items-start gap-2.5">
-              <TrendingDown className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
-              <p className="text-xs leading-relaxed text-amber-900">
-                <span className="font-bold">68% of your users</span> closed popups with this much text within 3 seconds. Shorter copy converts better.
-              </p>
-            </div>
-          </div>
-
-          {/* Score ring */}
-          <div className="flex flex-col items-center gap-1.5 py-6">
-            <ScoreRingLight score={aiScore} color={scoreColor} size={88} />
-            <span className="text-xs font-medium text-gray-400">
-              {isFixed ? "Excellent" : "Needs Improvement"}
-            </span>
-          </div>
-
-          {/* Issue list */}
-          <div className="space-y-3 px-5 pb-5">
-            {ISSUE_ITEMS.map(({ label, Icon, unfixedStatus, fixedStatus, beforeMsg, afterMsg }, index) => {
-              const status = isFixed ? fixedStatus : unfixedStatus
-              const message = isFixed ? afterMsg : beforeMsg
-              return (
-                <div key={label} className="item-fade-in flex items-start gap-3" style={{ animationDelay: `${index * 0.11}s` }}>
-                  <div className={`mt-0.5 flex-shrink-0 rounded-full p-1 ${
-                    status === "good" ? "bg-green-50 text-green-500" :
-                    status === "warn" ? "bg-amber-50 text-amber-500" :
-                    "bg-red-50 text-red-500"
-                  }`}>
-                    {status === "good"
-                      ? <CheckCircle2 className="h-3.5 w-3.5" />
-                      : status === "warn"
-                      ? <AlertTriangle className="h-3.5 w-3.5" />
-                      : <XCircle className="h-3.5 w-3.5" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <Icon className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs font-semibold text-gray-700">{label}</span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-gray-500">{message}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* CTA */}
-          <div className="px-5 pb-5">
-            {!isFixed ? (
-              <button
-                onClick={handleFixWithAI}
-                disabled={isScanning}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-105 disabled:opacity-70"
-              >
-                <Zap className="h-4 w-4" />
-                {isScanning ? "Rewriting…" : "Fix with AI"}
-              </button>
-            ) : (
-              <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
-                <CheckCircle2 className="h-4 w-4" />
-                All issues resolved!
-              </div>
-            )}
-          </div>
-        </div>
-        </div>
-      )}
 
       {/* ── Individual element toolbars ────────────────────────────────────── */}
       {activeToolbar?.type === "image" && (
