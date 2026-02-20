@@ -145,7 +145,13 @@ function DashboardHealthPanel({ panel, onClose, onOpenEditor }: {
 }) {
   const h = HEALTH[panel.status]
   const PANEL_W = 278
-  const x = Math.min(panel.x, (typeof window !== "undefined" ? window.innerWidth : 1440) - PANEL_W - 16)
+  const [windowWidth, setWindowWidth] = useState(1440)
+
+  useEffect(() => {
+    setWindowWidth(window.innerWidth)
+  }, [])
+
+  const x = Math.min(panel.x, windowWidth - PANEL_W - 16)
   const y = Math.max(panel.y - 8, 8)
 
   return (
