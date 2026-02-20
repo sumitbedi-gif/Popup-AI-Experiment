@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -33,6 +33,11 @@ const BOTTOM_ITEMS: NavItem[] = [
 
 export function WhatfixSidebar({ activeId = "widgets" }: { activeId?: string }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   return (
     <aside
@@ -147,18 +152,20 @@ export function WhatfixSidebar({ activeId = "widgets" }: { activeId?: string }) 
       <div className="sidebar-divider" />
 
       {/* Whatfix logo */}
-      <div style={{
-        display: "flex", justifyContent: isCollapsed ? "center" : "flex-start",
-        alignItems: "center", padding: isCollapsed ? "10px 0" : "10px 20px",
-      }}>
-        <Image
-          src="/brand/whatfix-logo.png"
-          alt="Whatfix"
-          width={isCollapsed ? 24 : 80}
-          height={24}
-          style={{ objectFit: "contain", opacity: 0.7 }}
-        />
-      </div>
+      {isMounted && (
+        <div style={{
+          display: "flex", justifyContent: isCollapsed ? "center" : "flex-start",
+          alignItems: "center", padding: isCollapsed ? "10px 0" : "10px 20px",
+        }}>
+          <Image
+            src="/brand/whatfix-logo.png"
+            alt="Whatfix"
+            width={isCollapsed ? 24 : 80}
+            height={24}
+            style={{ objectFit: "contain", opacity: 0.7, width: "auto", height: "24px" }}
+          />
+        </div>
+      )}
     </aside>
   )
 }
