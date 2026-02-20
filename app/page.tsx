@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   FolderPlus, Search, Filter, LayoutGrid, List,
   ChevronsUpDown, ChevronLeft, ChevronRight, HelpCircle, ChevronDown,
-  Sparkles, CheckCircle2, AlertTriangle, XCircle, X, TrendingDown, ArrowRight,
+  Sparkles, CheckCircle2, AlertTriangle, XCircle, X, TrendingDown, TrendingUp, ArrowRight,
 } from "lucide-react"
 import { WhatfixSidebar } from "@/components/whatfix-sidebar"
 
@@ -19,19 +19,25 @@ interface PopupRow {
   updatedBy: string
   updatedOn: string
   status: "red" | "yellow" | "green"
+  tab: "Draft" | "Ready" | "Production"
 }
 
 const POPUPS: PopupRow[] = [
-  { id: "outage-alert",        name: "Outage Alert",              version: 3,  type: "Pop Up", createdOn: "Jan 12, 2026", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Jan 15, 2026", status: "green"  },
-  { id: "downtime-notice",     name: "Scheduled Maintenance",     version: 1,  type: "Pop Up", createdOn: "Dec 04, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Dec 04, 2025", status: "yellow" },
-  { id: "feature-announce",    name: "Team's Productivity",        version: 2,  type: "Pop Up", createdOn: "Nov 18, 2025", createdBy: "Sumit Bedi",   updatedBy: "Ujjal Hafila", updatedOn: "Nov 20, 2025", status: "red"    },
-  { id: "trial-expiry",        name: "Trial Expiry Warning",      version: 4,  type: "Pop Up", createdOn: "Oct 07, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Oct 08, 2025", status: "red"    },
-  { id: "onboarding-welcome",  name: "Onboarding Welcome",        version: 2,  type: "Pop Up", createdOn: "Sep 15, 2025", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Oct 01, 2025", status: "green"  },
-  { id: "upgrade-offer",       name: "Free Trial Upgrade Offer",  version: 5,  type: "Pop Up", createdOn: "Aug 22, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Sep 01, 2025", status: "yellow" },
-  { id: "product-update",      name: "Product Update Banner",     version: 1,  type: "Pop Up", createdOn: "Jul 10, 2025", createdBy: "Ujjal Hafila", updatedBy: "Sumit Bedi",   updatedOn: "Jul 11, 2025", status: "red"    },
-  { id: "feedback-survey",     name: "Feedback Survey Prompt",    version: 3,  type: "Pop Up", createdOn: "Jun 03, 2025", createdBy: "Sumit Bedi",   updatedBy: "Ujjal Hafila", updatedOn: "Jun 05, 2025", status: "yellow" },
-  { id: "re-engagement",       name: "Re-engagement Campaign",    version: 2,  type: "Pop Up", createdOn: "May 14, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "May 20, 2025", status: "red"    },
-  { id: "support-contact",     name: "Support Contact Prompt",    version: 57, type: "Pop Up", createdOn: "Apr 02, 2025", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Jan 01, 2026", status: "green"  },
+  // Draft (5)
+  { id: "outage-alert",        name: "Outage Alert",              version: 3,  type: "Pop Up", createdOn: "Jan 12, 2026", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Jan 15, 2026", status: "green",  tab: "Draft"      },
+  { id: "downtime-notice",     name: "Scheduled Maintenance",     version: 1,  type: "Pop Up", createdOn: "Dec 04, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Dec 04, 2025", status: "yellow", tab: "Draft"      },
+  { id: "feature-announce",    name: "Team's Productivity",       version: 2,  type: "Pop Up", createdOn: "Nov 18, 2025", createdBy: "Sumit Bedi",   updatedBy: "Ujjal Hafila", updatedOn: "Nov 20, 2025", status: "red",    tab: "Draft"      },
+  { id: "trial-expiry",        name: "Trial Expiry Warning",      version: 4,  type: "Pop Up", createdOn: "Oct 07, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Oct 08, 2025", status: "red",    tab: "Draft"      },
+  { id: "onboarding-welcome",  name: "Onboarding Welcome",        version: 2,  type: "Pop Up", createdOn: "Sep 15, 2025", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Oct 01, 2025", status: "green",  tab: "Draft"      },
+  // Ready (3)
+  { id: "upgrade-offer",       name: "Free Trial Upgrade Offer",  version: 5,  type: "Pop Up", createdOn: "Aug 22, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Sep 01, 2025", status: "yellow", tab: "Ready"      },
+  { id: "product-update",      name: "Product Update Banner",     version: 1,  type: "Pop Up", createdOn: "Jul 10, 2025", createdBy: "Ujjal Hafila", updatedBy: "Sumit Bedi",   updatedOn: "Jul 11, 2025", status: "red",    tab: "Ready"      },
+  { id: "feedback-survey",     name: "Feedback Survey Prompt",    version: 3,  type: "Pop Up", createdOn: "Jun 03, 2025", createdBy: "Sumit Bedi",   updatedBy: "Ujjal Hafila", updatedOn: "Jun 05, 2025", status: "yellow", tab: "Ready"      },
+  // Production (4)
+  { id: "re-engagement",       name: "Re-engagement Campaign",    version: 2,  type: "Pop Up", createdOn: "May 14, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "May 20, 2025", status: "red",    tab: "Production" },
+  { id: "support-contact",     name: "Support Contact Prompt",    version: 57, type: "Pop Up", createdOn: "Apr 02, 2025", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Jan 01, 2026", status: "green",  tab: "Production" },
+  { id: "nps-survey",          name: "NPS Score Survey",          version: 1,  type: "Pop Up", createdOn: "Mar 10, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Mar 12, 2025", status: "yellow", tab: "Production" },
+  { id: "account-renewal",     name: "Account Renewal Alert",     version: 2,  type: "Pop Up", createdOn: "Feb 20, 2025", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Feb 22, 2025", status: "red",    tab: "Production" },
 ]
 
 // Popup/modal icon
@@ -165,10 +171,16 @@ function DashboardHealthPanel({ panel, onClose, onOpenEditor }: {
       </div>
 
       {/* Insight banner */}
-      <div style={{ background: "#fffbeb", borderBottom: "1px solid #fde68a", padding: "9px 14px" }}>
+      <div style={{
+        background: panel.status === "green" ? "#f0fdf4" : "#fffbeb",
+        borderBottom: `1px solid ${panel.status === "green" ? "#bbf7d0" : "#fde68a"}`,
+        padding: "9px 14px",
+      }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-          <TrendingDown size={12} style={{ color: "#d97706", flexShrink: 0, marginTop: "1px" }} />
-          <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#92400e", margin: 0 }}>{h.insight}</p>
+          {panel.status === "green"
+            ? <TrendingUp size={12} style={{ color: "#16a34a", flexShrink: 0, marginTop: "1px" }} />
+            : <TrendingDown size={12} style={{ color: "#d97706", flexShrink: 0, marginTop: "1px" }} />}
+          <p style={{ fontSize: "11px", lineHeight: "1.5", color: panel.status === "green" ? "#14532d" : "#92400e", margin: 0 }}>{h.insight}</p>
         </div>
       </div>
 
@@ -233,7 +245,7 @@ export default function DashboardPage() {
   const [panel, setPanel] = useState<PanelState | null>(null)
 
   const filtered = POPUPS.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.tab === activeTab && p.name.toLowerCase().includes(search.toLowerCase())
   )
 
   useEffect(() => {
@@ -271,9 +283,9 @@ export default function DashboardPage() {
         {/* Page header */}
         <div style={{ background: "#fff", borderBottom: "1px solid #ECECF3" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 12px" }}>
-            <h1 style={{ fontSize: "22px", fontWeight: 600, color: "#1F1F32", margin: 0 }}>Widgets</h1>
+            <h1 style={{ fontSize: "22px", fontWeight: 600, color: "#1F1F32", margin: 0 }}>Popups</h1>
             <button className="wf-header-create-btn">
-              Create widget
+              Create popup
               <ChevronDown size={14} />
             </button>
           </div>
@@ -281,7 +293,7 @@ export default function DashboardPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
             <div style={{ display: "flex", gap: "24px" }}>
               {TABS.map((tab) => (
-                <button key={tab} className={`wf-tab ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)}>
+                <button key={tab} className={`wf-tab ${activeTab === tab ? "active" : ""}`} onClick={() => { setActiveTab(tab); setPanel(null) }}>
                   <span>{tab}</span>
                   <div className="wf-tab-indicator" />
                 </button>
@@ -354,7 +366,7 @@ export default function DashboardPage() {
 
         {/* Pagination */}
         <div style={{ background: "#fff", borderTop: "1px solid #ECECF3", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "13px", color: "#525066", flexShrink: 0 }}>
-          <span>Rows 1–{filtered.length} of {POPUPS.length}</span>
+          <span>Rows 1–{filtered.length} of {filtered.length}</span>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <button className="wf-icon-btn"><ChevronLeft size={14} /></button>
             <button style={{ width: "30px", height: "30px", borderRadius: "6px", border: "none", background: "#0975D7", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>1</button>
