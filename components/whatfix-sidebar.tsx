@@ -22,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "analytics", label: "Guidance analytics",  Icon: BarChart2,  href: "#" },
   { id: "style",     label: "Style",               Icon: Palette,    href: "#" },
   { id: "tags",      label: "Tags",                Icon: Tag,        href: "#" },
-  { id: "settings",  label: "Settings",            Icon: Settings,   href: "#" },
+  { id: "settings",  label: "Settings",            Icon: Settings,   href: "/settings" },
 ]
 
 const BOTTOM_ITEMS: NavItem[] = [
