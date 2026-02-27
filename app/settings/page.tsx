@@ -11,6 +11,17 @@ interface PropertyItem {
   description: string
   enabled: boolean
   section: string
+  values?: string[]
+}
+
+// ── Default values for popup properties ──────────────────────────────────────
+const POPUP_DEFAULT_VALUES: Record<string, string[]> = {
+  "popup-use-cases": [
+    "Employee onboarding", "Release management", "Training and guidance",
+    "Policy and governance", "Announcements", "Incident and Outages",
+  ],
+  "popup-type": ["Modal", "Snackbar", "Carousel"],
+  "popup-content": ["Media and text", "Only text"],
 }
 
 // ── Modal category data ───────────────────────────────────────────────────────
@@ -75,7 +86,7 @@ const MODAL_CATEGORIES = [
     name: "Popups", count: 3,
     items: [
       { id: "popup-use-cases", name: "Use cases", description: "Add or delete use cases for your popup content to target specific user scenarios and workflows" },
-      { id: "popup-layouts",   name: "Layouts",   description: "Add or delete layouts to customize the visual structure and presentation of your popups" },
+      { id: "popup-type",      name: "Type",      description: "Add or delete types to customize the visual structure and presentation of your popups" },
       { id: "popup-content",   name: "Content",   description: "Add or delete content blocks to manage the text, media, and messaging within your popups" },
     ],
   },
@@ -106,11 +117,17 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
 }
 
 // ── Accordion section ─────────────────────────────────────────────────────────
-function AccordionSection({ sectionName, items, onToggle, onDelete }: {
+function AccordionSection({
+  sectionName, items, onToggle, onDelete,
+  onUpdateValue, onDeleteValue, onAddValue,
+}: {
   sectionName: string
   items: PropertyItem[]
   onToggle: (id: string) => void
   onDelete: (id: string) => void
+  onUpdateValue?: (itemId: string, index: number, value: string) => void
+  onDeleteValue?: (itemId: string, index: number) => void
+  onAddValue?: (itemId: string) => void
 }) {
   const [open, setOpen] = useState(true)
 
@@ -136,24 +153,81 @@ function AccordionSection({ sectionName, items, onToggle, onDelete }: {
             <div
               key={item.id}
               style={{
-                display: "flex", alignItems: "center", gap: "16px",
                 padding: "16px 20px", background: "#fff",
                 border: "1px solid #ECECF3", borderRadius: "8px",
               }}
             >
-              <Toggle enabled={item.enabled} onChange={() => onToggle(item.id)} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "14px", fontWeight: 500, color: "#1F1F32" }}>{item.name}</div>
-                <div style={{ fontSize: "13px", color: "#6B697B", marginTop: "2px" }}>{item.description}</div>
+              {/* Property header row */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+                <Toggle enabled={item.enabled} onChange={() => onToggle(item.id)} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "14px", fontWeight: 500, color: "#1F1F32" }}>{item.name}</div>
+                  <div style={{ fontSize: "13px", color: "#6B697B", marginTop: "2px" }}>{item.description}</div>
+                </div>
+                {/* Hide trash when only 1 property remains in the section */}
+                {items.length > 1 && (
+                  <button
+                    onClick={() => onDelete(item.id)}
+                    style={{ border: "none", background: "none", cursor: "pointer", color: "#C4C3D0", padding: "4px", display: "flex", borderRadius: "4px", flexShrink: 0 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#EF4444")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#C4C3D0")}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
-              <button
-                onClick={() => onDelete(item.id)}
-                style={{ border: "none", background: "none", cursor: "pointer", color: "#C4C3D0", padding: "4px", display: "flex", borderRadius: "4px" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#EF4444")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#C4C3D0")}
-              >
-                <Trash2 size={16} />
-              </button>
+
+              {/* Editable value list (popup properties only) */}
+              {item.values && (
+                <div style={{ marginTop: "14px", paddingLeft: "60px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {item.values.map((val, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={(e) => onUpdateValue?.(item.id, idx, e.target.value)}
+                          style={{
+                            width: "260px", padding: "7px 12px",
+                            border: "1px solid #DFDDE7", borderRadius: "6px",
+                            fontSize: "13px", color: "#1F1F32",
+                            outline: "none", background: "#fff",
+                          }}
+                          onFocus={(e) => (e.currentTarget.style.borderColor = "#0975D7")}
+                          onBlur={(e) => (e.currentTarget.style.borderColor = "#DFDDE7")}
+                        />
+                        {/* Hide delete on last value */}
+                        {item.values!.length > 1 && (
+                          <button
+                            onClick={() => onDeleteValue?.(item.id, idx)}
+                            style={{
+                              border: "none", background: "none", cursor: "pointer",
+                              color: "#C4C3D0", padding: "4px", display: "flex",
+                              borderRadius: "4px", flexShrink: 0,
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "#EF4444")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "#C4C3D0")}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => onAddValue?.(item.id)}
+                    style={{
+                      marginTop: "10px",
+                      padding: "5px 14px", borderRadius: "5px",
+                      border: "1px solid #0975D7", background: "transparent",
+                      color: "#0975D7", fontSize: "12px", fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    + Add
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -312,6 +386,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("Technical configuration")
   const [properties, setProperties] = useState<PropertyItem[]>(INITIAL_PROPERTIES)
   const [showModal, setShowModal] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   const existingIds = new Set(properties.map(p => p.id))
 
@@ -331,8 +406,50 @@ export default function SettingsPage() {
   }
 
   function handleAdd(items: { id: string; name: string; description: string; section: string }[]) {
-    setProperties(prev => [...prev, ...items.map(i => ({ ...i, enabled: true }))])
+    setProperties(prev => [
+      ...prev,
+      ...items.map(i => ({
+        ...i,
+        enabled: true,
+        values: POPUP_DEFAULT_VALUES[i.id] ? [...POPUP_DEFAULT_VALUES[i.id]] : undefined,
+      })),
+    ])
     setShowModal(false)
+  }
+
+  function handleUpdateValue(itemId: string, index: number, value: string) {
+    setProperties(prev => prev.map(p =>
+      p.id === itemId && p.values
+        ? { ...p, values: p.values.map((v, i) => i === index ? value : v) }
+        : p
+    ))
+  }
+
+  function handleDeleteValue(itemId: string, index: number) {
+    setProperties(prev => prev.map(p =>
+      p.id === itemId && p.values
+        ? { ...p, values: p.values.filter((_, i) => i !== index) }
+        : p
+    ))
+  }
+
+  function handleAddValue(itemId: string) {
+    setProperties(prev => prev.map(p =>
+      p.id === itemId && p.values !== undefined
+        ? { ...p, values: [...p.values, ""] }
+        : p
+    ))
+  }
+
+  function handleSave() {
+    const hasEmpty = properties.some(p => p.values?.some(v => v.trim() === ""))
+    if (hasEmpty) {
+      setSaveError(true)
+      setTimeout(() => setSaveError(false), 4000)
+      return
+    }
+    setSaveError(false)
+    // save logic here
   }
 
   return (
@@ -383,7 +500,7 @@ export default function SettingsPage() {
               >
                 Add preferences
               </button>
-              <button style={{ padding: "8px 18px", borderRadius: "6px", border: "none", background: "#C74900", color: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+              <button onClick={handleSave} style={{ padding: "8px 18px", borderRadius: "6px", border: "none", background: "#C74900", color: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
                 Save
               </button>
             </div>
@@ -397,6 +514,9 @@ export default function SettingsPage() {
               items={items}
               onToggle={handleToggle}
               onDelete={handleDelete}
+              onUpdateValue={handleUpdateValue}
+              onDeleteValue={handleDeleteValue}
+              onAddValue={handleAddValue}
             />
           ))}
 
@@ -414,6 +534,32 @@ export default function SettingsPage() {
           onClose={() => setShowModal(false)}
           onAdd={handleAdd}
         />
+      )}
+
+      {/* Bottom error banner */}
+      {saveError && (
+        <div style={{
+          position: "fixed", bottom: 0, left: "260px", right: 0, zIndex: 700,
+          background: "#FEF2F2", borderTop: "1px solid #FECACA",
+          padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+              <circle cx="8" cy="8" r="7.5" stroke="#DC2626" />
+              <path d="M8 4.5V8.5" stroke="#DC2626" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="8" cy="11" r="0.75" fill="#DC2626" />
+            </svg>
+            <span style={{ fontSize: "13px", color: "#991B1B", fontWeight: 500 }}>
+              Value can&apos;t be empty. Please fill in or remove all blank fields before saving.
+            </span>
+          </div>
+          <button
+            onClick={() => setSaveError(false)}
+            style={{ border: "none", background: "none", cursor: "pointer", color: "#DC2626", display: "flex", padding: "2px" }}
+          >
+            <X size={14} />
+          </button>
+        </div>
       )}
     </div>
   )
