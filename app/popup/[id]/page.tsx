@@ -3,7 +3,53 @@
 import { Suspense, useState } from "react"
 import { ChevronUp, ChevronDown } from "lucide-react"
 import { WhatfixSidebar } from "@/components/whatfix-sidebar"
-import { PromoPopup } from "@/components/promo-popup"
+import { PromoPopup, PopupTheme } from "@/components/promo-popup"
+
+// ── Themes ────────────────────────────────────────────────────────────────────
+const THEMES: PopupTheme[] = [
+  {
+    name: "Default",
+    card: "#ffffff", cardFg: "#0f0f1a", mutedFg: "#6b6b80",
+    primary: "#3b4fd8", primaryFg: "#ffffff",
+    cardRadius: "20px", buttonRadius: "12px",
+    fontFamily: "Geist, -apple-system, sans-serif",
+  },
+  {
+    name: "Slack",
+    card: "#4a154b", cardFg: "#ffffff", mutedFg: "rgba(255,255,255,0.72)",
+    primary: "#ecb22e", primaryFg: "#1d1c1d",
+    cardRadius: "16px", buttonRadius: "8px",
+    fontFamily: "Lato, -apple-system, sans-serif",
+  },
+  {
+    name: "Netflix",
+    card: "#141414", cardFg: "#ffffff", mutedFg: "#a3a3a3",
+    primary: "#e50914", primaryFg: "#ffffff",
+    cardRadius: "4px", buttonRadius: "4px",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  {
+    name: "Salesforce",
+    card: "#f3f7ff", cardFg: "#032d60", mutedFg: "#444e5d",
+    primary: "#0176d3", primaryFg: "#ffffff",
+    cardRadius: "12px", buttonRadius: "8px",
+    fontFamily: "'Salesforce Sans', -apple-system, sans-serif",
+  },
+  {
+    name: "Linear",
+    card: "#0f0e17", cardFg: "#ffffff", mutedFg: "rgba(255,255,255,0.58)",
+    primary: "#5e6ad2", primaryFg: "#ffffff",
+    cardRadius: "16px", buttonRadius: "10px",
+    fontFamily: "Inter, -apple-system, sans-serif",
+  },
+  {
+    name: "Notion",
+    card: "#ffffff", cardFg: "#1c1c1e", mutedFg: "#6b6b6b",
+    primary: "#1c1c1e", primaryFg: "#ffffff",
+    cardRadius: "8px", buttonRadius: "6px",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+  },
+]
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -86,12 +132,39 @@ function PanelAccordion({ title, defaultOpen = false, children }: {
 }
 
 // ── Appearance accordion content ──────────────────────────────────────────────
-function AppearanceContent() {
+function AppearanceContent({
+  selectedTheme, onThemeChange,
+}: {
+  selectedTheme: PopupTheme
+  onThemeChange: (t: PopupTheme) => void
+}) {
   const [bgMode, setBgMode] = useState<"Color" | "Image">("Color")
   const [color, setColor] = useState("#E85D5D")
 
   return (
     <>
+      {/* Theme selector */}
+      <Row label="Theme">
+        <select
+          value={selectedTheme.name}
+          onChange={(e) => {
+            const t = THEMES.find(th => th.name === e.target.value)
+            if (t) onThemeChange(t)
+          }}
+          style={{
+            padding: "6px 10px", border: "1px solid #DFDDE7", borderRadius: "6px",
+            fontSize: "13px", color: "#1F1F32", background: "#fff",
+            cursor: "pointer", outline: "none",
+          }}
+        >
+          {THEMES.map(t => (
+            <option key={t.name} value={t.name}>{t.name}</option>
+          ))}
+        </select>
+      </Row>
+
+      <Divider />
+
       <Row label="Background">
         <div style={{ display: "flex", border: "1px solid #DFDDE7", borderRadius: "6px", overflow: "hidden" }}>
           {(["Color", "Image"] as const).map((mode) => (
@@ -196,7 +269,12 @@ function ControlsContent() {
 }
 
 // ── Right config panel ────────────────────────────────────────────────────────
-function ConfigPanel() {
+function ConfigPanel({
+  selectedTheme, onThemeChange,
+}: {
+  selectedTheme: PopupTheme
+  onThemeChange: (t: PopupTheme) => void
+}) {
   return (
     <div style={{
       position: "fixed", top: 0, right: 0, bottom: 0, width: "300px", zIndex: 100,
@@ -204,7 +282,7 @@ function ConfigPanel() {
       overflowY: "auto", fontFamily: "Inter, -apple-system, sans-serif",
     }}>
       <PanelAccordion title="Appearance" defaultOpen>
-        <AppearanceContent />
+        <AppearanceContent selectedTheme={selectedTheme} onThemeChange={onThemeChange} />
       </PanelAccordion>
       <PanelAccordion title="Position">
         <PositionContent />
@@ -218,11 +296,16 @@ function ConfigPanel() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 function EditorPageInner() {
+  const [selectedTheme, setSelectedTheme] = useState<PopupTheme>(THEMES[0])
+
   return (
     <>
       <WhatfixSidebar activeId="widgets" />
-      <PromoPopup containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[300px]" />
-      <ConfigPanel />
+      <PromoPopup
+        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[300px]"
+        theme={selectedTheme}
+      />
+      <ConfigPanel selectedTheme={selectedTheme} onThemeChange={setSelectedTheme} />
     </>
   )
 }

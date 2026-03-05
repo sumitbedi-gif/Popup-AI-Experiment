@@ -91,6 +91,18 @@ const ISSUE_ITEMS = [
 type ToolbarType = "image" | "heading" | "body" | "button"
 type ActiveToolbar = { type: ToolbarType; pos: { x: number; y: number } } | null
 
+export interface PopupTheme {
+  name: string
+  card: string         // card background
+  cardFg: string       // heading color
+  mutedFg: string      // body text color
+  primary: string      // button background
+  primaryFg: string    // button text color
+  cardRadius: string   // card border-radius
+  buttonRadius: string // button border-radius
+  fontFamily: string
+}
+
 // ── Score SVG ring ────────────────────────────────────────────────────────────
 const SCORE_RADIUS = 36
 const SCORE_CIRCUMFERENCE = 2 * Math.PI * SCORE_RADIUS
@@ -127,6 +139,8 @@ interface PromoPopupProps {
   onIssuesPillClick?: () => void
   /** Called when the health panel X button is clicked */
   onIssuesPanelClose?: () => void
+  /** Active theme preset — overrides card/button/font CSS variables */
+  theme?: PopupTheme
 }
 
 export function PromoPopup({
@@ -134,6 +148,7 @@ export function PromoPopup({
   healthPanelPortal,
   onIssuesPillClick,
   onIssuesPanelClose,
+  theme,
 }: PromoPopupProps = {}) {
   // Existing state
   const [activeToolbar, setActiveToolbar] = useState<ActiveToolbar>(null)
@@ -319,7 +334,18 @@ export function PromoPopup({
         <div className="relative z-10 w-full max-w-lg">
 
         {/* Popup Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xl">
+        <div
+          className="relative overflow-hidden rounded-2xl bg-card shadow-2xl"
+          style={theme ? {
+            '--color-card': theme.card,
+            '--color-card-foreground': theme.cardFg,
+            '--color-primary': theme.primary,
+            '--color-primary-foreground': theme.primaryFg,
+            '--color-muted-foreground': theme.mutedFg,
+            fontFamily: theme.fontFamily,
+            borderRadius: theme.cardRadius,
+          } as React.CSSProperties : undefined}
+        >
 
           {/* Scan overlay — sits outside the scroll so it always covers the visible card */}
           {isScanning && (
@@ -418,6 +444,7 @@ export function PromoPopup({
                   handleElementClick("button", buttonRef, e)
                 }}
                 className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${activeToolbar?.type === "button" ? "ring-2 ring-[#3b82f6]/50 ring-offset-2" : ""} ${textProcessing === "button" ? "animate-pulse opacity-50" : ""}`}
+                style={theme ? { borderRadius: theme.buttonRadius } : undefined}
               >
                 {displayButtonText}
                 <ArrowRight className="h-4 w-4" />
