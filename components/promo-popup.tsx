@@ -423,7 +423,7 @@ export function PromoPopup({
                 <img
                   src={theme.logo}
                   alt=""
-                  style={{ height: "20px", width: "auto", objectFit: "contain", display: "block" }}
+                  style={{ height: "20px", width: "auto", objectFit: "contain", display: "block", marginBottom: "8px" }}
                 />
               )}
               <h2
