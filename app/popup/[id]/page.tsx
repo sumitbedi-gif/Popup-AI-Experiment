@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useState } from "react"
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { WhatfixSidebar } from "@/components/whatfix-sidebar"
 import { PromoPopup, PopupTheme } from "@/components/promo-popup"
 
@@ -275,42 +275,82 @@ function ControlsContent() {
 
 // ── Right config panel ────────────────────────────────────────────────────────
 function ConfigPanel({
-  selectedTheme, onThemeChange,
+  selectedTheme, onThemeChange, isOpen, onToggle,
 }: {
   selectedTheme: PopupTheme
   onThemeChange: (t: PopupTheme) => void
+  isOpen: boolean
+  onToggle: () => void
 }) {
   return (
-    <div style={{
-      position: "fixed", top: 0, right: 0, bottom: 0, width: "300px", zIndex: 100,
-      background: "#fff", borderLeft: "1px solid #ECECF3",
-      overflowY: "auto", fontFamily: "Inter, -apple-system, sans-serif",
-    }}>
-      <PanelAccordion title="Appearance" defaultOpen>
-        <AppearanceContent selectedTheme={selectedTheme} onThemeChange={onThemeChange} />
-      </PanelAccordion>
-      <PanelAccordion title="Position">
-        <PositionContent />
-      </PanelAccordion>
-      <PanelAccordion title="Controls">
-        <ControlsContent />
-      </PanelAccordion>
-    </div>
+    <>
+      {/* Slide-in panel */}
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0, width: "300px", zIndex: 100,
+        background: "#fff", borderLeft: "1px solid #ECECF3",
+        overflowY: "auto", fontFamily: "Inter, -apple-system, sans-serif",
+        transform: isOpen ? "translateX(0)" : "translateX(300px)",
+        transition: "transform 280ms cubic-bezier(0.4,0,0.2,1)",
+      }}>
+        <PanelAccordion title="Appearance" defaultOpen>
+          <AppearanceContent selectedTheme={selectedTheme} onThemeChange={onThemeChange} />
+        </PanelAccordion>
+        <PanelAccordion title="Position">
+          <PositionContent />
+        </PanelAccordion>
+        <PanelAccordion title="Controls">
+          <ControlsContent />
+        </PanelAccordion>
+      </div>
+
+      {/* Toggle tab — sticks to left edge of panel */}
+      <button
+        onClick={onToggle}
+        style={{
+          position: "fixed",
+          right: isOpen ? "300px" : "0",
+          top: "50%",
+          transform: "translateY(-50%)",
+          zIndex: 101,
+          width: "20px", height: "52px",
+          background: "#fff",
+          border: "1px solid #ECECF3",
+          borderRight: "none",
+          borderRadius: "6px 0 0 6px",
+          cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "-2px 0 8px rgba(0,0,0,0.06)",
+          transition: "right 280ms cubic-bezier(0.4,0,0.2,1)",
+        }}
+        title={isOpen ? "Hide panel" : "Show panel"}
+      >
+        {isOpen
+          ? <ChevronRight size={12} style={{ color: "#6B697B" }} />
+          : <ChevronLeft size={12} style={{ color: "#6B697B" }} />}
+      </button>
+    </>
   )
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 function EditorPageInner() {
   const [selectedTheme, setSelectedTheme] = useState<PopupTheme>(THEMES[0])
+  const [panelOpen, setPanelOpen] = useState(true)
 
   return (
     <>
       <WhatfixSidebar activeId="widgets" />
       <PromoPopup
-        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[300px]"
+        containerClassName={`fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] ${panelOpen ? "pr-[300px]" : "pr-4"}`}
         theme={selectedTheme}
+        onIssuesPillClick={() => setPanelOpen(false)}
       />
-      <ConfigPanel selectedTheme={selectedTheme} onThemeChange={setSelectedTheme} />
+      <ConfigPanel
+        selectedTheme={selectedTheme}
+        onThemeChange={setSelectedTheme}
+        isOpen={panelOpen}
+        onToggle={() => setPanelOpen(o => !o)}
+      />
     </>
   )
 }
