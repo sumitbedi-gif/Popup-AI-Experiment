@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Image from "next/image"
 import {
@@ -142,6 +142,8 @@ interface PromoPopupProps {
   onIssuesPanelClose?: () => void
   /** Active theme preset — overrides card/button/font CSS variables */
   theme?: PopupTheme
+  /** Increment this value to force-close the health panel from the parent */
+  closeHealthSignal?: number
 }
 
 export function PromoPopup({
@@ -150,6 +152,7 @@ export function PromoPopup({
   onIssuesPillClick,
   onIssuesPanelClose,
   theme,
+  closeHealthSignal,
 }: PromoPopupProps = {}) {
   // Existing state
   const [activeToolbar, setActiveToolbar] = useState<ActiveToolbar>(null)
@@ -174,6 +177,11 @@ export function PromoPopup({
   const headingRef = useRef<HTMLHeadingElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLAnchorElement>(null)
+
+  // Close health panel whenever parent sends a signal (e.g. config panel reopens)
+  useEffect(() => {
+    if (closeHealthSignal) setShowRefinePanel(false)
+  }, [closeHealthSignal])
 
   const closeToolbar = useCallback(() => setActiveToolbar(null), [])
 
@@ -570,7 +578,14 @@ export function PromoPopup({
         </div>{/* end popup wrapper */}
 
         {/* ── Issues Found pill ───────────────────────────────────────────── */}
-        <button onClick={() => setShowRefinePanel((v) => !v)} className="relative z-10 cursor-pointer">
+        <button
+          onClick={() => {
+            const opening = !showRefinePanel
+            setShowRefinePanel(opening)
+            if (opening) onIssuesPillClick?.()
+          }}
+          className="relative z-10 cursor-pointer"
+        >
           {!isFixed ? (
             <span className="ai-pill-wrapper">
               <span className="ai-spin-border" />

@@ -336,6 +336,15 @@ function ConfigPanel({
 function EditorPageInner() {
   const [selectedTheme, setSelectedTheme] = useState<PopupTheme>(THEMES[0])
   const [panelOpen, setPanelOpen] = useState(true)
+  const [closeHealthSignal, setCloseHealthSignal] = useState(0)
+
+  function handleTogglePanel() {
+    setPanelOpen(o => {
+      const opening = !o
+      if (opening) setCloseHealthSignal(s => s + 1)
+      return opening
+    })
+  }
 
   return (
     <>
@@ -344,12 +353,13 @@ function EditorPageInner() {
         containerClassName={`fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] ${panelOpen ? "pr-[300px]" : "pr-4"}`}
         theme={selectedTheme}
         onIssuesPillClick={() => setPanelOpen(false)}
+        closeHealthSignal={closeHealthSignal}
       />
       <ConfigPanel
         selectedTheme={selectedTheme}
         onThemeChange={setSelectedTheme}
         isOpen={panelOpen}
-        onToggle={() => setPanelOpen(o => !o)}
+        onToggle={handleTogglePanel}
       />
     </>
   )
