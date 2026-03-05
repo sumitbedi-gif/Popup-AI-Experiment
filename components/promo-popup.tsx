@@ -337,11 +337,11 @@ export function PromoPopup({
         <div
           className="relative overflow-hidden rounded-2xl bg-card shadow-2xl"
           style={theme ? {
-            '--color-card': theme.card,
-            '--color-card-foreground': theme.cardFg,
-            '--color-primary': theme.primary,
-            '--color-primary-foreground': theme.primaryFg,
-            '--color-muted-foreground': theme.mutedFg,
+            '--card': theme.card,
+            '--card-foreground': theme.cardFg,
+            '--primary': theme.primary,
+            '--primary-foreground': theme.primaryFg,
+            '--muted-foreground': theme.mutedFg,
             fontFamily: theme.fontFamily,
             borderRadius: theme.cardRadius,
           } as React.CSSProperties : undefined}
