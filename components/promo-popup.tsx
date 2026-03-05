@@ -144,6 +144,8 @@ interface PromoPopupProps {
   theme?: PopupTheme
   /** Increment this value to force-close the health panel from the parent */
   closeHealthSignal?: number
+  /** Called when Reset Demo is clicked, so the parent can reset theme */
+  onResetDemo?: () => void
 }
 
 export function PromoPopup({
@@ -153,6 +155,7 @@ export function PromoPopup({
   onIssuesPanelClose,
   theme,
   closeHealthSignal,
+  onResetDemo,
 }: PromoPopupProps = {}) {
   // Existing state
   const [activeToolbar, setActiveToolbar] = useState<ActiveToolbar>(null)
@@ -306,6 +309,7 @@ export function PromoPopup({
     setIsScanning(false)
     setShowImage(false)
     setIsComparingOriginal(false)
+    onResetDemo?.()
   }
 
   // Derived score: 49 base + points for each individually fixed item

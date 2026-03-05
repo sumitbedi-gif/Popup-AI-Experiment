@@ -354,6 +354,7 @@ function EditorPageInner() {
         theme={selectedTheme}
         onIssuesPillClick={() => setPanelOpen(false)}
         closeHealthSignal={closeHealthSignal}
+        onResetDemo={() => setSelectedTheme(THEMES[0])}
       />
       <ConfigPanel
         selectedTheme={selectedTheme}
