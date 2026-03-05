@@ -20,6 +20,7 @@ const THEMES: PopupTheme[] = [
     primary: "#ecb22e", primaryFg: "#1d1c1d",
     cardRadius: "16px", buttonRadius: "8px",
     fontFamily: "Lato, -apple-system, sans-serif",
+    logo: "/logos/Slack.svg",
   },
   {
     name: "Netflix",
@@ -27,6 +28,7 @@ const THEMES: PopupTheme[] = [
     primary: "#e50914", primaryFg: "#ffffff",
     cardRadius: "4px", buttonRadius: "4px",
     fontFamily: "Arial, Helvetica, sans-serif",
+    logo: "/logos/Netflix.svg",
   },
   {
     name: "Salesforce",
@@ -34,6 +36,7 @@ const THEMES: PopupTheme[] = [
     primary: "#0176d3", primaryFg: "#ffffff",
     cardRadius: "12px", buttonRadius: "8px",
     fontFamily: "'Salesforce Sans', -apple-system, sans-serif",
+    logo: "/logos/Salesforce.svg",
   },
   {
     name: "Linear",
@@ -41,6 +44,7 @@ const THEMES: PopupTheme[] = [
     primary: "#5e6ad2", primaryFg: "#ffffff",
     cardRadius: "16px", buttonRadius: "10px",
     fontFamily: "Inter, -apple-system, sans-serif",
+    logo: "/logos/Linear.svg",
   },
   {
     name: "Notion",
@@ -48,6 +52,7 @@ const THEMES: PopupTheme[] = [
     primary: "#1c1c1e", primaryFg: "#ffffff",
     cardRadius: "8px", buttonRadius: "6px",
     fontFamily: "Georgia, 'Times New Roman', serif",
+    logo: "/logos/Notion.svg",
   },
 ]
 

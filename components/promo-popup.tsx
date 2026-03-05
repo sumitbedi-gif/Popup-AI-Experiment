@@ -101,6 +101,7 @@ export interface PopupTheme {
   cardRadius: string   // card border-radius
   buttonRadius: string // button border-radius
   fontFamily: string
+  logo?: string        // path to brand logo shown above heading
 }
 
 // ── Score SVG ring ────────────────────────────────────────────────────────────
@@ -417,6 +418,14 @@ export function PromoPopup({
           {/* Content */}
           <div>
             <div className="flex flex-col items-center gap-3 px-8 pb-8 pt-5 text-center">
+              {theme?.logo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={theme.logo}
+                  alt=""
+                  style={{ height: "20px", width: "auto", objectFit: "contain", display: "block" }}
+                />
+              )}
               <h2
                 ref={headingRef}
                 id="popup-heading"
