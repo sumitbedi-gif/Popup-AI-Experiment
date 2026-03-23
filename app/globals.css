@@ -313,3 +313,37 @@
   opacity: 0;
   animation: itemFadeIn 0.3s ease forwards;
 }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Issue card hover */
+.issue-card {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.issue-card:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* Celebratory pulse for "All Issues Fixed" pill */
+@keyframes celebratePulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.pill-celebrate {
+  animation: celebratePulse 0.5s ease-out;
+}
+
+/* Confetti sparkle dots float in */
+@keyframes sparkleIn {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.sparkle-dot {
+  animation: sparkleIn 0.4s ease-out forwards;
+  opacity: 0;
+}

@@ -24,7 +24,7 @@ interface PopupRow {
 
 const POPUPS: PopupRow[] = [
   // Draft (5)
-  { id: "outage-alert",        name: "Outage Alert",              version: 3,  type: "Pop Up", createdOn: "Jan 12, 2026", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Jan 15, 2026", status: "green",  tab: "Draft"      },
+  { id: "outage-alert",        name: "Outage Alert",              version: 3,  type: "Pop Up", createdOn: "Jan 12, 2026", createdBy: "Sumit Bedi",   updatedBy: "Sumit Bedi",   updatedOn: "Jan 15, 2026", status: "red",    tab: "Draft"      },
   { id: "downtime-notice",     name: "Scheduled Maintenance",     version: 1,  type: "Pop Up", createdOn: "Dec 04, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Dec 04, 2025", status: "yellow", tab: "Draft"      },
   { id: "feature-announce",    name: "Team's Productivity",       version: 2,  type: "Pop Up", createdOn: "Nov 18, 2025", createdBy: "Sumit Bedi",   updatedBy: "Ujjal Hafila", updatedOn: "Nov 20, 2025", status: "red",    tab: "Draft"      },
   { id: "trial-expiry",        name: "Trial Expiry Warning",      version: 4,  type: "Pop Up", createdOn: "Oct 07, 2025", createdBy: "Ujjal Hafila", updatedBy: "Ujjal Hafila", updatedOn: "Oct 08, 2025", status: "red",    tab: "Draft"      },

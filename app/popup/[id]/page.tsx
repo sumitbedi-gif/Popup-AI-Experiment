@@ -1,9 +1,12 @@
 "use client"
 
-import { Suspense, useState } from "react"
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Suspense, useState, useCallback } from "react"
+import { useParams } from "next/navigation"
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, CheckCircle2, RotateCcw, Sparkles } from "lucide-react"
 import { WhatfixSidebar } from "@/components/whatfix-sidebar"
 import { PromoPopup, PopupTheme } from "@/components/promo-popup"
+import { OutagePopup, type IssueId } from "@/components/outage-popup"
+import { HealthPanel, SCORE_MAP, type Tier } from "@/components/health-panel"
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const THEMES: PopupTheme[] = [
@@ -332,8 +335,160 @@ function ConfigPanel({
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-function EditorPageInner() {
+// ── Outage Editor ─────────────────────────────────────────────────────────────
+function OutageEditor() {
+  const [tier, setTier] = useState<Tier>("ai")
+  const [fixedIssues, setFixedIssues] = useState<Set<IssueId>>(new Set())
+  const [dismissedIssues, setDismissedIssues] = useState<Set<IssueId>>(new Set())
+  const [panelView, setPanelView] = useState<"config" | "health">("config")
+  const [scanningIssue, setScanningIssue] = useState<IssueId | null>(null)
+
+  const totalResolved = fixedIssues.size + dismissedIssues.size
+  const issueCount = 5 - totalResolved
+  const isAllClear = issueCount <= 0
+  const { color } = SCORE_MAP[Math.min(fixedIssues.size, 5)]
+
+  const handleFixIssue = useCallback((id: IssueId) => {
+    setScanningIssue(id)
+    setTimeout(() => {
+      setScanningIssue(null)
+      setFixedIssues(prev => new Set(prev).add(id))
+    }, 1800)
+  }, [])
+
+  const handleDismissIssue = useCallback((id: IssueId) => {
+    setDismissedIssues(prev => new Set(prev).add(id))
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setFixedIssues(new Set())
+    setDismissedIssues(new Set())
+    setScanningIssue(null)
+    setPanelView("config")
+  }, [])
+
+  return (
+    <>
+      <WhatfixSidebar activeId="widgets" />
+
+      {/* Tier toggle above canvas — centered between sidebar (260px) and panel (380px) */}
+      <div style={{
+        position: "fixed", top: "16px",
+        left: "calc(260px + (100vw - 260px - 380px) / 2)",
+        transform: "translateX(-50%)",
+        zIndex: 200, display: "flex",
+        background: "#f1f5f9", borderRadius: "10px", padding: "3px",
+      }}>
+        {(["ai", "standard"] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTier(t)}
+            style={{
+              width: "130px", padding: "8px 0", border: "none", cursor: "pointer",
+              fontSize: "13px", fontWeight: 600, borderRadius: "8px",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+              background: tier === t ? "#fff" : "transparent",
+              color: tier === t ? "#111827" : "#9CA3AF",
+              boxShadow: tier === t ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+              transition: "all 200ms",
+            }}
+          >
+            {t === "ai" && <Sparkles size={13} style={{ color: tier === t ? "#2563eb" : "#9CA3AF" }} />}
+            {t === "ai" ? "AI Tier" : "Standard Tier"}
+          </button>
+        ))}
+      </div>
+
+      {/* Outage popup centered in canvas — pill rendered as children */}
+      <OutagePopup
+        fixedIssues={fixedIssues}
+        scanningIssue={scanningIssue}
+        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[380px]"
+      >
+        {/* Issues pill — animated border */}
+        <button
+          onClick={() => setPanelView("health")}
+          className="relative z-10 cursor-pointer"
+          style={{ background: "none", border: "none", padding: 0 }}
+        >
+          {isAllClear ? (
+            <span className="pill-celebrate flex items-center gap-2 rounded-full border border-green-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-600"
+              style={{ boxShadow: "0 2px 12px rgba(16,185,129,0.15)" }}
+            >
+              <CheckCircle2 size={15} />
+              No issues found
+            </span>
+          ) : (
+            <span className="ai-pill-wrapper">
+              <span className="ai-spin-border" />
+              <span className="relative z-10 flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-800">
+                Issues Found
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
+                  {issueCount}
+                </span>
+              </span>
+            </span>
+          )}
+        </button>
+      </OutagePopup>
+
+      {/* Right panel — no tabs, config by default, health on pill click */}
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0, width: "380px", zIndex: 100,
+        background: "#fff", borderLeft: "1px solid #E5E7EB",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        display: "flex", flexDirection: "column",
+      }}>
+        <div style={{ flex: 1, overflow: "hidden" }}>
+          {panelView === "config" ? (
+            <div style={{ height: "100%", overflowY: "auto" }}>
+              <PanelAccordion title="Appearance" defaultOpen>
+                <AppearanceContent
+                  selectedTheme={THEMES[0]}
+                  onThemeChange={() => {}}
+                />
+              </PanelAccordion>
+              <PanelAccordion title="Position">
+                <PositionContent />
+              </PanelAccordion>
+              <PanelAccordion title="Controls">
+                <ControlsContent />
+              </PanelAccordion>
+            </div>
+          ) : (
+            <HealthPanel
+              fixedIssues={fixedIssues}
+              dismissedIssues={dismissedIssues}
+              tier={tier}
+              onFixIssue={handleFixIssue}
+              onDismissIssue={handleDismissIssue}
+              onBack={() => setPanelView("config")}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Reset button */}
+      <button
+        onClick={handleReset}
+        style={{
+          position: "fixed", bottom: "24px", right: "400px", zIndex: 200,
+          display: "flex", alignItems: "center", gap: "6px",
+          padding: "8px 16px", borderRadius: "20px",
+          background: "rgba(31,31,50,0.8)", color: "#fff",
+          border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500,
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <RotateCcw size={13} />
+        Reset Demo
+      </button>
+    </>
+  )
+}
+
+// ── Promo Editor (existing) ──────────────────────────────────────────────────
+function PromoEditor() {
   const [selectedTheme, setSelectedTheme] = useState<PopupTheme>(THEMES[0])
   const [panelOpen, setPanelOpen] = useState(true)
   const [closeHealthSignal, setCloseHealthSignal] = useState(0)
@@ -366,10 +521,14 @@ function EditorPageInner() {
   )
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function PopupEditorPage() {
+  const params = useParams()
+  const id = params?.id as string
+
   return (
     <Suspense>
-      <EditorPageInner />
+      {id === "outage-alert" ? <OutageEditor /> : <PromoEditor />}
     </Suspense>
   )
 }
