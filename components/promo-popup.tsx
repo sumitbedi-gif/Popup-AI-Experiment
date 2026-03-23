@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Image from "next/image"
 import {
@@ -91,6 +91,19 @@ const ISSUE_ITEMS = [
 type ToolbarType = "image" | "heading" | "body" | "button"
 type ActiveToolbar = { type: ToolbarType; pos: { x: number; y: number } } | null
 
+export interface PopupTheme {
+  name: string
+  card: string         // card background
+  cardFg: string       // heading color
+  mutedFg: string      // body text color
+  primary: string      // button background
+  primaryFg: string    // button text color
+  cardRadius: string   // card border-radius
+  buttonRadius: string // button border-radius
+  fontFamily: string
+  logo?: string        // path to brand logo shown above heading
+}
+
 // ── Score SVG ring ────────────────────────────────────────────────────────────
 const SCORE_RADIUS = 36
 const SCORE_CIRCUMFERENCE = 2 * Math.PI * SCORE_RADIUS
@@ -127,6 +140,12 @@ interface PromoPopupProps {
   onIssuesPillClick?: () => void
   /** Called when the health panel X button is clicked */
   onIssuesPanelClose?: () => void
+  /** Active theme preset — overrides card/button/font CSS variables */
+  theme?: PopupTheme
+  /** Increment this value to force-close the health panel from the parent */
+  closeHealthSignal?: number
+  /** Called when Reset Demo is clicked, so the parent can reset theme */
+  onResetDemo?: () => void
 }
 
 export function PromoPopup({
@@ -134,6 +153,9 @@ export function PromoPopup({
   healthPanelPortal,
   onIssuesPillClick,
   onIssuesPanelClose,
+  theme,
+  closeHealthSignal,
+  onResetDemo,
 }: PromoPopupProps = {}) {
   // Existing state
   const [activeToolbar, setActiveToolbar] = useState<ActiveToolbar>(null)
@@ -158,6 +180,11 @@ export function PromoPopup({
   const headingRef = useRef<HTMLHeadingElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLAnchorElement>(null)
+
+  // Close health panel whenever parent sends a signal (e.g. config panel reopens)
+  useEffect(() => {
+    if (closeHealthSignal) setShowRefinePanel(false)
+  }, [closeHealthSignal])
 
   const closeToolbar = useCallback(() => setActiveToolbar(null), [])
 
@@ -282,6 +309,7 @@ export function PromoPopup({
     setIsScanning(false)
     setShowImage(false)
     setIsComparingOriginal(false)
+    onResetDemo?.()
   }
 
   // Derived score: 49 base + points for each individually fixed item
@@ -319,7 +347,18 @@ export function PromoPopup({
         <div className="relative z-10 w-full max-w-lg">
 
         {/* Popup Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xl">
+        <div
+          className="relative overflow-hidden rounded-2xl bg-card shadow-2xl"
+          style={theme ? {
+            '--card': theme.card,
+            '--card-foreground': theme.cardFg,
+            '--primary': theme.primary,
+            '--primary-foreground': theme.primaryFg,
+            '--muted-foreground': theme.mutedFg,
+            fontFamily: theme.fontFamily,
+            borderRadius: theme.cardRadius,
+          } as React.CSSProperties : undefined}
+        >
 
           {/* Scan overlay — sits outside the scroll so it always covers the visible card */}
           {isScanning && (
@@ -391,6 +430,14 @@ export function PromoPopup({
           {/* Content */}
           <div>
             <div className="flex flex-col items-center gap-3 px-8 pb-8 pt-5 text-center">
+              {theme?.logo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={theme.logo}
+                  alt=""
+                  style={{ height: "20px", width: "auto", objectFit: "contain", display: "block", marginBottom: "8px" }}
+                />
+              )}
               <h2
                 ref={headingRef}
                 id="popup-heading"
@@ -418,6 +465,7 @@ export function PromoPopup({
                   handleElementClick("button", buttonRef, e)
                 }}
                 className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${activeToolbar?.type === "button" ? "ring-2 ring-[#3b82f6]/50 ring-offset-2" : ""} ${textProcessing === "button" ? "animate-pulse opacity-50" : ""}`}
+                style={theme ? { borderRadius: theme.buttonRadius } : undefined}
               >
                 {displayButtonText}
                 <ArrowRight className="h-4 w-4" />
@@ -534,7 +582,14 @@ export function PromoPopup({
         </div>{/* end popup wrapper */}
 
         {/* ── Issues Found pill ───────────────────────────────────────────── */}
-        <button onClick={() => setShowRefinePanel((v) => !v)} className="relative z-10 cursor-pointer">
+        <button
+          onClick={() => {
+            const opening = !showRefinePanel
+            setShowRefinePanel(opening)
+            if (opening) onIssuesPillClick?.()
+          }}
+          className="relative z-10 cursor-pointer"
+        >
           {!isFixed ? (
             <span className="ai-pill-wrapper">
               <span className="ai-spin-border" />
