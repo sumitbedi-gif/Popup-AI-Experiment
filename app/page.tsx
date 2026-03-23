@@ -249,10 +249,14 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Draft")
   const [search, setSearch] = useState("")
   const [panel, setPanel] = useState<PanelState | null>(null)
+  const [showAllRows, setShowAllRows] = useState(false)
 
   const filtered = POPUPS.filter((p) =>
     p.tab === activeTab && p.name.toLowerCase().includes(search.toLowerCase())
   )
+  const FEATURED_IDS = new Set(["outage-alert", "feature-announce"])
+  const visibleRows = showAllRows ? filtered : filtered.filter(p => FEATURED_IDS.has(p.id))
+  const hiddenCount = filtered.length - filtered.filter(p => FEATURED_IDS.has(p.id)).length
 
   useEffect(() => {
     if (!panel) return
@@ -338,7 +342,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((popup, i) => (
+              {visibleRows.map((popup, i) => (
                 <tr
                   key={popup.id}
                   onClick={() => router.push(`/popup/${popup.id}?name=${encodeURIComponent(popup.name)}`)}
@@ -368,11 +372,27 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+
+          {/* Show/hide other rows */}
+          {hiddenCount > 0 && (
+            <button
+              onClick={() => setShowAllRows(v => !v)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                width: "100%", padding: "10px", border: "none", borderTop: "1px solid #ECECF3",
+                background: "#FAFAFA", cursor: "pointer",
+                fontSize: "12px", fontWeight: 500, color: "#8C899F",
+              }}
+            >
+              {showAllRows ? "Hide other rows" : `Show ${hiddenCount} other rows`}
+              <ChevronDown size={12} style={{ transform: showAllRows ? "rotate(180deg)" : "none", transition: "transform 200ms" }} />
+            </button>
+          )}
         </div>
 
         {/* Pagination */}
         <div style={{ background: "#fff", borderTop: "1px solid #ECECF3", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "13px", color: "#525066", flexShrink: 0 }}>
-          <span>Rows 1–{filtered.length} of {filtered.length}</span>
+          <span>Rows 1–{visibleRows.length} of {filtered.length}</span>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <button className="wf-icon-btn"><ChevronLeft size={14} /></button>
             <button style={{ width: "30px", height: "30px", borderRadius: "6px", border: "none", background: "#0975D7", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>1</button>
