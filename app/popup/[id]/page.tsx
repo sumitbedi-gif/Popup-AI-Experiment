@@ -1,8 +1,8 @@
 "use client"
 
-import { Suspense, useState, useCallback, useRef } from "react"
+import { Suspense, useState, useCallback, useRef, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, CheckCircle2, RotateCcw, Sparkles } from "lucide-react"
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, CheckCircle2, RotateCcw, Sparkles, AlertTriangle } from "lucide-react"
 import { WhatfixSidebar } from "@/components/whatfix-sidebar"
 import { PromoPopup, PopupTheme } from "@/components/promo-popup"
 import { OutagePopup, type IssueId } from "@/components/outage-popup"
@@ -335,6 +335,145 @@ function ConfigPanel({
   )
 }
 
+// ── Grammarly-style draggable health badge ───────────────────────────────────
+function HealthBadge({
+  issueCount, isAllClear, onClick,
+}: {
+  issueCount: number; isAllClear: boolean; onClick: () => void
+}) {
+  // Position: anchored to bottom-right corner of the popup card
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [initialized, setInitialized] = useState(false)
+  const dragging = useRef(false)
+  const dragOffset = useRef({ x: 0, y: 0 })
+  const didDrag = useRef(false)
+  const badgeRef = useRef<HTMLDivElement>(null)
+
+  // Find the popup card and anchor to its bottom-right corner
+  useEffect(() => {
+    const findPopup = () => {
+      // Find the popup card on canvas
+      const card = document.querySelector(".fixed.inset-0 .relative.z-10 .relative.overflow-hidden.bg-white") as HTMLElement
+      if (card) {
+        const rect = card.getBoundingClientRect()
+        // Place just outside the bottom-right corner — slightly beside, not overlapping
+        setPos({ x: rect.right + 28, y: rect.bottom - 16 })
+        setInitialized(true)
+      } else {
+        const canvasCenterX = 260 + (window.innerWidth - 260 - 380) / 2
+        const canvasCenterY = window.innerHeight / 2
+        setPos({ x: canvasCenterX + 270, y: canvasCenterY + 200 })
+        setInitialized(true)
+      }
+    }
+    // Small delay to let the popup render
+    const t = setTimeout(findPopup, 100)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return
+      const dx = e.clientX - startPos.current.x
+      const dy = e.clientY - startPos.current.y
+      // Only count as drag if moved more than 5px — prevents accidental drag on click
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        didDrag.current = true
+        setPos({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y })
+      }
+    }
+    const onMouseUp = () => {
+      dragging.current = false
+      if (badgeRef.current) badgeRef.current.style.cursor = "pointer"
+    }
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove)
+      window.removeEventListener("mouseup", onMouseUp)
+    }
+  }, [])
+
+  const startPos = useRef({ x: 0, y: 0 })
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragging.current = true
+    didDrag.current = false
+    startPos.current = { x: e.clientX, y: e.clientY }
+    if (badgeRef.current) {
+      const rect = badgeRef.current.getBoundingClientRect()
+      dragOffset.current = { x: e.clientX - rect.left - rect.width / 2, y: e.clientY - rect.top - rect.height / 2 }
+      badgeRef.current.style.cursor = "grabbing"
+    }
+    e.preventDefault()
+  }
+
+  const handleClick = () => {
+    // Only count as a drag if the mouse moved more than 5px
+    if (!didDrag.current) onClick()
+  }
+
+  if (!initialized) return null
+
+  return (
+    <div
+      ref={badgeRef}
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
+      style={{
+        position: "fixed",
+        left: pos.x,
+        top: pos.y,
+        transform: "translate(-50%, -50%)",
+        zIndex: 200,
+        cursor: "pointer",
+        // Teardrop shape: rounded top-left, top-right, bottom-right; pointed bottom-left
+        width: "44px", height: "44px",
+        borderRadius: "50% 50% 50% 12px",
+        background: isAllClear
+          ? "linear-gradient(135deg, #10B981, #059669)"
+          : "#fff",
+        border: isAllClear ? "none" : "1.5px solid #E5E7EB",
+        boxShadow: isAllClear
+          ? "0 4px 16px rgba(16,185,129,0.3), 0 1px 4px rgba(0,0,0,0.08)"
+          : "0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transition: "box-shadow 200ms ease, transform 150ms ease",
+        userSelect: "none",
+      }}
+      onMouseEnter={e => {
+        if (!dragging.current) {
+          e.currentTarget.style.boxShadow = isAllClear
+            ? "0 6px 24px rgba(16,185,129,0.4), 0 2px 8px rgba(0,0,0,0.1)"
+            : "0 6px 24px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)"
+          e.currentTarget.style.transform = "translate(-50%, -50%) scale(1.08)"
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = isAllClear
+          ? "0 4px 16px rgba(16,185,129,0.3), 0 1px 4px rgba(0,0,0,0.08)"
+          : "0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)"
+        e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)"
+      }}
+    >
+      {isAllClear ? (
+        <CheckCircle2 size={20} style={{ color: "#fff" }} />
+      ) : (
+        <div style={{
+          width: "22px", height: "22px", borderRadius: "50%",
+          background: "#EF4444",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 0 0 3px rgba(239,68,68,0.15)",
+        }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+            {issueCount}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Outage Editor ─────────────────────────────────────────────────────────────
 function OutageEditor() {
   const [tier, setTier] = useState<Tier>("ai")
@@ -437,6 +576,13 @@ function OutageEditor() {
         containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[380px]"
       />
 
+      {/* Grammarly-style floating health badge — draggable on canvas */}
+      <HealthBadge
+        issueCount={issueCount}
+        isAllClear={isAllClear}
+        onClick={() => setPanelView("health")}
+      />
+
       {/* Right panel — no tabs, config by default, health on pill click */}
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0, width: "380px", zIndex: 100,
@@ -474,63 +620,7 @@ function OutageEditor() {
           )}
         </div>
 
-        {/* Health toast — pinned to bottom of panel, hidden when health panel is open */}
-        {panelView !== "health" && (
-          <div style={{ flexShrink: 0, padding: "12px 14px", borderTop: "1px solid #ECECF3" }}>
-            <button
-              onClick={() => setPanelView("health")}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: "10px",
-                padding: "12px 14px", borderRadius: "10px", border: "none",
-                cursor: "pointer", textAlign: "left",
-                background: isAllClear ? "#ECFDF5" : "#FFF7ED",
-                transition: "box-shadow 150ms ease",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)" }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = "none" }}
-            >
-              {isAllClear ? (
-                <>
-                  <div style={{
-                    width: "28px", height: "28px", borderRadius: "8px",
-                    background: "#D1FAE5", display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                    <CheckCircle2 size={15} style={{ color: "#059669" }} />
-                  </div>
-                  <span style={{ flex: 1, fontSize: "13px", fontWeight: 600, color: "#065F46" }}>
-                    All issues resolved
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#059669", whiteSpace: "nowrap" }}>
-                    View &rarr;
-                  </span>
-                </>
-              ) : (
-                <>
-                  <div style={{
-                    width: "28px", height: "28px", borderRadius: "8px",
-                    background: "linear-gradient(135deg, #FDE68A, #FDBA74)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                    <Sparkles size={14} style={{ color: "#92400E" }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#78350F" }}>
-                      {issueCount} issue{issueCount !== 1 ? "s" : ""} found in this popup
-                    </div>
-                  </div>
-                  <span style={{
-                    fontSize: "12px", fontWeight: 600, color: "#B45309",
-                    whiteSpace: "nowrap",
-                  }}>
-                    Review &rarr;
-                  </span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
+        {/* (Health badge is rendered on canvas, not inside panel) */}
       </div>
 
       {/* Reset button — positioned above the FAB pill */}
