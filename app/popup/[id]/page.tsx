@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useCallback } from "react"
+import { Suspense, useState, useCallback, useRef } from "react"
 import { useParams } from "next/navigation"
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, CheckCircle2, RotateCcw, Sparkles } from "lucide-react"
 import { WhatfixSidebar } from "@/components/whatfix-sidebar"
@@ -342,6 +342,8 @@ function OutageEditor() {
   const [dismissedIssues, setDismissedIssues] = useState<Set<IssueId>>(new Set())
   const [panelView, setPanelView] = useState<"config" | "health">("config")
   const [scanningIssue, setScanningIssue] = useState<IssueId | null>(null)
+  const [isFixingAll, setIsFixingAll] = useState(false)
+  const fixAllTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const totalResolved = fixedIssues.size + dismissedIssues.size
   const issueCount = 5 - totalResolved
@@ -356,14 +358,43 @@ function OutageEditor() {
     }, 1800)
   }, [])
 
+  const handleFixAllIssues = useCallback(() => {
+    const allIds: IssueId[] = ["body", "cta", "media", "checkbox", "contrast"]
+    const remaining = allIds.filter(id => !fixedIssues.has(id) && !dismissedIssues.has(id))
+    if (remaining.length === 0) return
+
+    setIsFixingAll(true)
+    // Start one continuous scan animation using the first issue as trigger
+    setScanningIssue(remaining[0])
+
+    // Resolve issues one by one under the single scan overlay
+    remaining.forEach((id, idx) => {
+      fixAllTimers.current.push(
+        setTimeout(() => {
+          setFixedIssues(prev => new Set(prev).add(id))
+          if (idx === remaining.length - 1) {
+            // All done — clear scan overlay
+            setTimeout(() => {
+              setScanningIssue(null)
+              setIsFixingAll(false)
+            }, 400)
+          }
+        }, 800 + idx * 600),
+      )
+    })
+  }, [fixedIssues, dismissedIssues])
+
   const handleDismissIssue = useCallback((id: IssueId) => {
     setDismissedIssues(prev => new Set(prev).add(id))
   }, [])
 
   const handleReset = useCallback(() => {
+    fixAllTimers.current.forEach(t => clearTimeout(t))
+    fixAllTimers.current = []
     setFixedIssues(new Set())
     setDismissedIssues(new Set())
     setScanningIssue(null)
+    setIsFixingAll(false)
     setPanelView("config")
   }, [])
 
@@ -399,38 +430,12 @@ function OutageEditor() {
         ))}
       </div>
 
-      {/* Outage popup centered in canvas — pill rendered as children */}
+      {/* Outage popup centered in canvas */}
       <OutagePopup
         fixedIssues={fixedIssues}
         scanningIssue={scanningIssue}
         containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[380px]"
-      >
-        {/* Issues pill — animated border */}
-        <button
-          onClick={() => setPanelView("health")}
-          className="relative z-10 cursor-pointer"
-          style={{ background: "none", border: "none", padding: 0 }}
-        >
-          {isAllClear ? (
-            <span className="pill-celebrate flex items-center gap-2 rounded-full border border-green-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-600"
-              style={{ boxShadow: "0 2px 12px rgba(16,185,129,0.15)" }}
-            >
-              <CheckCircle2 size={15} />
-              No issues found
-            </span>
-          ) : (
-            <span className="ai-pill-wrapper">
-              <span className="ai-spin-border" />
-              <span className="relative z-10 flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-800">
-                Issues Found
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
-                  {issueCount}
-                </span>
-              </span>
-            </span>
-          )}
-        </button>
-      </OutagePopup>
+      />
 
       {/* Right panel — no tabs, config by default, health on pill click */}
       <div style={{
@@ -461,18 +466,54 @@ function OutageEditor() {
               dismissedIssues={dismissedIssues}
               tier={tier}
               onFixIssue={handleFixIssue}
+              onFixAllIssues={handleFixAllIssues}
               onDismissIssue={handleDismissIssue}
               onBack={() => setPanelView("config")}
+              isFixingAll={isFixingAll}
             />
           )}
         </div>
+
+        {/* Issues pill — pinned to bottom of panel, hidden when health panel is open */}
+        {panelView !== "health" && (
+          <div style={{
+            flexShrink: 0, padding: "16px",
+            display: "flex", justifyContent: "center",
+            background: "linear-gradient(to top, #F9FAFB, #ffffff)",
+            borderTop: "1px solid #ECECF3",
+          }}>
+            <button
+              onClick={() => setPanelView("health")}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+            >
+              {isAllClear ? (
+                <span className="pill-celebrate flex items-center gap-2 rounded-full border border-green-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-600"
+                  style={{ boxShadow: "0 2px 12px rgba(16,185,129,0.15)" }}
+                >
+                  <CheckCircle2 size={15} />
+                  No issues found
+                </span>
+              ) : (
+                <span className="ai-pill-wrapper" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)", borderRadius: "9999px" }}>
+                  <span className="ai-spin-border" />
+                  <span className="relative z-10 flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-800">
+                    Issues Found
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
+                      {issueCount}
+                    </span>
+                  </span>
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Reset button */}
+      {/* Reset button — positioned above the FAB pill */}
       <button
         onClick={handleReset}
         style={{
-          position: "fixed", bottom: "24px", right: "400px", zIndex: 200,
+          position: "fixed", bottom: "24px", left: "calc(260px + 24px)", zIndex: 200,
           display: "flex", alignItems: "center", gap: "6px",
           padding: "8px 16px", borderRadius: "20px",
           background: "rgba(31,31,50,0.8)", color: "#fff",

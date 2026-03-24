@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import {
   ChevronDown, ChevronUp, ChevronLeft, Sparkles, Zap,
   AlignLeft, MousePointerClick, ImageIcon, SquareCheck, Eye,
-  CheckCircle2, X,
+  X,
 } from "lucide-react"
 import type { IssueId } from "./outage-popup"
 
@@ -19,6 +19,7 @@ interface HealthIssue {
   insightAI: string
   insightStandard: string
   yourDataChip: string
+  howToFix: string
 }
 
 // ── Issue definitions ────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ const ISSUES: HealthIssue[] = [
     insightAI: "Your body text is ~380 characters. For incident notifications, popups with 31\u201380 characters see 3.2\u00d7 higher engagement. Your other outage popups average 65 characters.",
     insightStandard: "Your body text is ~380 characters. The recommended range for modals is 31\u201380 characters.",
     yourDataChip: "Your incident popups with 31\u201380 char body text average 23.7% engagement rate vs 7.2% for longer text.",
+    howToFix: "Shorten your body text to 31\u201380 characters. Focus on the essential message: what\u2019s happening, when, and what the user should do.",
   },
   {
     id: "cta",
@@ -40,6 +42,7 @@ const ISSUES: HealthIssue[] = [
     insightAI: 'Your CTA says "OK". For incident popups, CTAs like "View Status Page" or "Check Timeline" drive users to take meaningful action. Your best-performing outage popups use action-oriented CTAs.',
     insightStandard: 'Your CTA says "OK". Action verbs like "View Details" or "Learn More" tend to drive higher engagement than dismissive text.',
     yourDataChip: "Popups with action-verb CTAs average 10.6% engagement vs 4.3% for generic dismiss text like OK, Got It, Close.",
+    howToFix: "Replace \u201COK\u201D with an action-oriented CTA like \u201CView Status Page\u201D or \u201CCheck Timeline\u201D that directs the user to a next step.",
   },
   {
     id: "media",
@@ -49,6 +52,7 @@ const ISSUES: HealthIssue[] = [
     insightAI: "This popup has no image or icon. For incident and outage communications, a warning icon or status graphic helps users immediately recognize the severity.",
     insightStandard: "This popup has no image or icon. Adding a relevant visual (like a warning icon) can improve scannability.",
     yourDataChip: "Across Whatfix, incident popups with a warning icon or status image average 11.4% engagement vs 6.0% for text-only.",
+    howToFix: "Add a warning icon or status illustration above the heading. A visual cue helps users immediately recognize the popup\u2019s purpose.",
   },
   {
     id: "checkbox",
@@ -58,6 +62,7 @@ const ISSUES: HealthIssue[] = [
     insightAI: 'This popup doesn\'t include a "Don\'t show me again" checkbox. For recurring maintenance notifications, users who\'ve acknowledged the message shouldn\'t be shown it repeatedly.',
     insightStandard: 'This popup doesn\'t include a "Don\'t show me again" checkbox. For recurring content, this lets users opt out after first viewing.',
     yourDataChip: "Popups with a suppress checkbox show 79.8% reduction in repeat-view fatigue. Your release popups already use this.",
+    howToFix: "Add a \u201CDon\u2019t show me again\u201D checkbox below the CTA button. This reduces repeat-view fatigue for recurring notifications.",
   },
   {
     id: "contrast",
@@ -67,6 +72,7 @@ const ISSUES: HealthIssue[] = [
     insightAI: "Your body text uses a light gray (#999) on a white background, giving a contrast ratio of ~2.8:1. WCAG AA requires 4.5:1 for normal text.",
     insightStandard: "Your body text color may not meet WCAG 4.5:1 contrast requirements against the background.",
     yourDataChip: "This is a WCAG accessibility standard. Your other popups use #333 which passes at 12.6:1.",
+    howToFix: "Change body text color from #999999 to #333333 or darker. This meets WCAG AA\u2019s 4.5:1 contrast ratio requirement for normal text.",
   },
 ]
 
@@ -107,6 +113,24 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
         style={{ transition: "fill 600ms ease-in-out" }}
       >{score}</text>
     </svg>
+  )
+}
+
+// ── Standard tier: segmented progress bar ────────────────────────────────────
+function SegmentedProgress({ fixedCount }: { fixedCount: number }) {
+  return (
+    <div style={{ display: "flex", gap: "4px", width: "100%" }}>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1, height: "6px", borderRadius: "3px",
+            background: i < fixedCount ? "#10B981" : "#E5E7EB",
+            transition: "background 400ms ease",
+          }}
+        />
+      ))}
+    </div>
   )
 }
 
@@ -164,12 +188,13 @@ function IssueCard({
   onDismiss: () => void
 }) {
   const { Icon } = issue
+  const [showTooltip, setShowTooltip] = useState(false)
 
   return (
     <div
       className="issue-card"
       style={{
-        border: "1px solid #E5E7EB", borderRadius: "10px", overflow: "hidden",
+        border: "1px solid #E5E7EB", borderRadius: "10px",
         background: "#fff",
       }}
     >
@@ -242,6 +267,64 @@ function IssueCard({
               </button>
             </div>
           )}
+
+          {/* Standard tier: Fix with AI (premium upsell) + Dismiss */}
+          {tier === "standard" && (
+            <div style={{ display: "flex", gap: "8px" }}>
+              {/* Fix with AI — blue gradient with premium icon, tooltip on hover */}
+              <div style={{ position: "relative", flex: 1 }}>
+                <button
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                    padding: "9px", borderRadius: "8px", border: "none",
+                    background: "linear-gradient(135deg, #2563eb, #06b6d4)",
+                    color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/Premium Icon.svg"
+                    alt=""
+                    style={{ width: "14px", height: "14px" }}
+                  />
+                  Fix with AI
+                </button>
+                {/* Tooltip — positioned below the button */}
+                {showTooltip && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 6px)", left: "50%",
+                    transform: "translateX(-50%)", whiteSpace: "nowrap",
+                    padding: "6px 10px", borderRadius: "6px",
+                    background: "#1F2937", color: "#fff",
+                    fontSize: "11px", fontWeight: 500,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    pointerEvents: "none", zIndex: 10,
+                  }}>
+                    <div style={{
+                      position: "absolute", bottom: "100%", left: "50%",
+                      transform: "translateX(-50%)",
+                      width: 0, height: 0,
+                      borderLeft: "5px solid transparent",
+                      borderRight: "5px solid transparent",
+                      borderBottom: "5px solid #1F2937",
+                    }} />
+                    Upgrade to AI tier for one-click fixes
+                  </div>
+                )}
+              </div>
+              {/* Dismiss */}
+              <button onClick={onDismiss} style={{
+                padding: "9px 16px", borderRadius: "8px",
+                border: "1px solid #E5E7EB", background: "#fff",
+                color: "#6B7280", fontSize: "12px", fontWeight: 500, cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}>
+                Dismiss
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -254,12 +337,14 @@ interface HealthPanelProps {
   dismissedIssues: Set<IssueId>
   tier: Tier
   onFixIssue: (id: IssueId) => void
+  onFixAllIssues: () => void
   onDismissIssue: (id: IssueId) => void
   onBack: () => void
+  isFixingAll?: boolean
 }
 
 export function HealthPanel({
-  fixedIssues, dismissedIssues, tier, onFixIssue, onDismissIssue, onBack,
+  fixedIssues, dismissedIssues, tier, onFixIssue, onFixAllIssues, onDismissIssue, onBack, isFixingAll,
 }: HealthPanelProps) {
   const [expandedCard, setExpandedCard] = useState<IssueId | null>(null)
   const [showDismissed, setShowDismissed] = useState(false)
@@ -273,6 +358,12 @@ export function HealthPanel({
 
   const totalChecks = tier === "ai" ? 19 : 10
   const passedChecks = totalChecks - (5 - totalResolved)
+
+  // Standard tier: all-clear text depends on whether any were genuinely fixed
+  const standardAllFixed = fixedCount >= 5
+  const standardAllClearText = standardAllFixed
+    ? "All issues resolved"
+    : `${fixedCount} of 5 issues resolved`
 
   return (
     <div style={{
@@ -308,30 +399,55 @@ export function HealthPanel({
       <div style={{
         flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
       }}>
-        {/* Score ring section — hidden when all clear */}
+        {/* Score header — tier-dependent */}
         {!isAllClear && (
           <>
-            <div style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              gap: "4px", padding: "20px 0 8px",
-              flexShrink: 0,
-            }}>
-              <ScoreRing score={score} color={color} />
-              <span style={{
-                fontSize: "12px", fontWeight: 600, color,
-                transition: "color 600ms ease-in-out",
-              }}>
-                {label}
-              </span>
-            </div>
+            {tier === "ai" ? (
+              /* AI tier: score ring + label */
+              <>
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  gap: "4px", padding: "20px 0 8px",
+                  flexShrink: 0,
+                }}>
+                  <ScoreRing score={score} color={color} />
+                  <span style={{
+                    fontSize: "12px", fontWeight: 600, color,
+                    transition: "color 600ms ease-in-out",
+                  }}>
+                    {label}
+                  </span>
+                </div>
 
-            {/* Summary line */}
-            <div style={{
-              textAlign: "center", fontSize: "12px", color: "#6B7280",
-              padding: "0 16px 16px", flexShrink: 0,
-            }}>
-              {5 - totalResolved} issue{5 - totalResolved !== 1 ? "s" : ""} · {passedChecks} checks passed
-            </div>
+                {/* Summary line */}
+                <div style={{
+                  textAlign: "center", fontSize: "12px", color: "#6B7280",
+                  padding: "0 16px 16px", flexShrink: 0,
+                }}>
+                  {5 - totalResolved} issue{5 - totalResolved !== 1 ? "s" : ""} · {passedChecks} checks passed
+                </div>
+              </>
+            ) : (
+              /* Standard tier: issue counter + segmented bar */
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                gap: "12px", padding: "24px 24px 20px",
+                flexShrink: 0,
+              }}>
+                <span style={{
+                  fontSize: "18px", fontWeight: 700, color: "#111827",
+                  letterSpacing: "-0.01em",
+                }}>
+                  {fixedCount} of 5 issues resolved
+                </span>
+                <SegmentedProgress fixedCount={fixedCount} />
+                <div style={{
+                  fontSize: "12px", color: "#6B7280",
+                }}>
+                  {5 - totalResolved} issue{5 - totalResolved !== 1 ? "s" : ""} remaining · {passedChecks} checks passed
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -347,14 +463,25 @@ export function HealthPanel({
               fontSize: "18px", fontWeight: 700, color: "#111827",
               margin: "0 0 8px", letterSpacing: "-0.01em",
             }}>
-              All clear!
+              {tier === "standard" ? standardAllClearText : "All clear!"}
             </h3>
+            {tier === "standard" && (
+              <div style={{ width: "60%", marginBottom: "12px" }}>
+                <SegmentedProgress fixedCount={fixedCount} />
+              </div>
+            )}
             <p style={{
               fontSize: "13px", color: "#9CA3AF", margin: 0, lineHeight: 1.6,
             }}>
-              {dismissedList.length > 0
-                ? `No remaining issues. You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
-                : "Your popup follows all best practices."}
+              {tier === "ai" ? (
+                dismissedList.length > 0
+                  ? `No remaining issues. You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
+                  : "Your popup follows all best practices."
+              ) : (
+                dismissedList.length > 0
+                  ? `You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
+                  : "All issues have been resolved."
+              )}
             </p>
           </div>
         ) : (
@@ -406,6 +533,30 @@ export function HealthPanel({
           </div>
         )}
       </div>
+
+      {/* AI tier: "Fix all with AI" button — sticky bottom */}
+      {tier === "ai" && !isAllClear && (
+        <div style={{ flexShrink: 0, padding: "12px 14px" }}>
+          <button
+            onClick={onFixAllIssues}
+            disabled={!!isFixingAll}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              padding: "12px", borderRadius: "10px", border: "none",
+              background: isFixingAll
+                ? "linear-gradient(135deg, #93c5fd, #67e8f9)"
+                : "linear-gradient(135deg, #2563eb, #06b6d4)",
+              color: "#fff", fontSize: "13px", fontWeight: 600,
+              cursor: isFixingAll ? "not-allowed" : "pointer",
+              transition: "opacity 200ms",
+              opacity: isFixingAll ? 0.7 : 1,
+            }}
+          >
+            <Zap size={15} />
+            {isFixingAll ? "Fixing all issues…" : "Fix all with AI"}
+          </button>
+        </div>
+      )}
 
       {/* Upgrade banner — sticky bottom (Standard tier only) */}
       {tier === "standard" && !isAllClear && (
