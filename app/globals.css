@@ -224,6 +224,68 @@
 .wf-search input { flex: 1; border: none; background: transparent; font-size: 13px; color: #3D3C52; outline: none; }
 .wf-search input::placeholder { color: #8C899F; }
 
+/* Thinner range sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #DBEAFE;
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0975D7;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0975D7;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #DBEAFE;
+  border-radius: 2px;
+}
+
+/* Health panel skeleton shimmer */
+@keyframes skeletonShimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+.health-skeleton > div {
+  background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%) !important;
+  background-size: 400px 100% !important;
+  animation: skeletonShimmer 1.2s ease-in-out infinite;
+}
+
+/* Health panel fade-up for score area */
+@keyframes healthFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Popup entrance — subtle scale + fade */
+@keyframes popupEntrance {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.popup-entrance {
+  animation: popupEntrance 350ms cubic-bezier(0.2, 0, 0.2, 1) both;
+}
+
 /* Scan beam: down → up → down for a thorough scan feel */
 @keyframes scanBeam {
   0%   { top: -4px; }

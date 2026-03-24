@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import {
-  ChevronDown, ChevronUp, ChevronLeft, Sparkles, Zap,
-  AlignLeft, MousePointerClick, ImageIcon, SquareCheck, Eye,
+  ChevronDown, ChevronUp, ChevronLeft, Sparkles,
+  AlignLeft, MousePointerClick, ImageIcon, Eye,
   X,
 } from "lucide-react"
 import type { IssueId } from "./outage-popup"
@@ -56,13 +56,13 @@ const ISSUES: HealthIssue[] = [
   },
   {
     id: "checkbox",
-    title: 'No "Don\'t show again" option',
+    title: "No close button on popup",
     severity: "improve",
-    Icon: SquareCheck,
-    insightAI: 'This popup doesn\'t include a "Don\'t show me again" checkbox. For recurring maintenance notifications, users who\'ve acknowledged the message shouldn\'t be shown it repeatedly.',
-    insightStandard: 'This popup doesn\'t include a "Don\'t show me again" checkbox. For recurring content, this lets users opt out after first viewing.',
-    yourDataChip: "Popups with a suppress checkbox show 79.8% reduction in repeat-view fatigue. Your release popups already use this.",
-    howToFix: "Add a \u201CDon\u2019t show me again\u201D checkbox below the CTA button. This reduces repeat-view fatigue for recurring notifications.",
+    Icon: X,
+    insightAI: "This popup has no visible close (X) button. Users who want to dismiss the notification have no clear way to do so, which increases frustration and perceived intrusiveness. 74% of users look for an X button first when dismissing modals.",
+    insightStandard: "This popup has no visible close (X) button. Without a clear dismiss affordance, users may feel trapped. Adding a close button is a standard UX pattern for modals.",
+    yourDataChip: "Popups with a visible close button see 18% lower rage-click rates. Your onboarding popups already include one.",
+    howToFix: "Add a close (X) button to the top-right corner of the popup. This gives users a clear, familiar way to dismiss the notification.",
   },
   {
     id: "contrast",
@@ -194,8 +194,7 @@ function IssueCard({
     <div
       className="issue-card"
       style={{
-        border: "1px solid #E5E7EB", borderRadius: "10px",
-        borderLeft: issue.severity === "fix" ? "3px solid #EF4444" : "3px solid #F59E0B",
+        border: "1px solid #D1D5DB", borderRadius: "10px",
         background: "#fff",
       }}
     >
@@ -247,7 +246,7 @@ function IssueCard({
             </div>
           )}
 
-          {/* AI tier: Fix with AI + Dismiss */}
+          {/* AI tier: Fix + Dismiss */}
           {tier === "ai" && (
             <div style={{ display: "flex", gap: "8px" }}>
               <button onClick={onFix} style={{
@@ -256,8 +255,8 @@ function IssueCard({
                 background: "linear-gradient(135deg, #2563eb, #06b6d4)",
                 color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer",
               }}>
-                <Zap size={13} />
-                Fix with AI
+                <Sparkles size={13} />
+                Apply
               </button>
               <button onClick={onDismiss} style={{
                 padding: "9px 16px", borderRadius: "8px",
@@ -290,7 +289,7 @@ function IssueCard({
                     alt=""
                     style={{ width: "14px", height: "14px" }}
                   />
-                  Fix with AI
+                  Fix
                 </button>
                 {/* Tooltip — positioned below the button */}
                 {showTooltip && (
@@ -349,6 +348,22 @@ export function HealthPanel({
 }: HealthPanelProps) {
   const [expandedCard, setExpandedCard] = useState<IssueId | null>(null)
   const [showDismissed, setShowDismissed] = useState(false)
+  const [revealedCount, setRevealedCount] = useState(0)
+
+  // Stagger-reveal: score ring → cards one by one → fix all button
+  useEffect(() => {
+    let count = 0
+    // Small initial delay, then stagger
+    const startTimer = setTimeout(() => {
+      const interval = setInterval(() => {
+        count++
+        setRevealedCount(count)
+        // 6 = 5 cards + 1 for the "Fix all" button
+        if (count >= 6) clearInterval(interval)
+      }, 100)
+    }, 150)
+    return () => clearTimeout(startTimer)
+  }, [])
 
   const activeIssues = ISSUES.filter(i => !fixedIssues.has(i.id) && !dismissedIssues.has(i.id))
   const dismissedList = ISSUES.filter(i => dismissedIssues.has(i.id))
@@ -371,41 +386,50 @@ export function HealthPanel({
       height: "100%", display: "flex", flexDirection: "column",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     }}>
-      {/* Header with back button */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "8px",
-        padding: "14px 16px", borderBottom: "1px solid #E5E7EB",
-        flexShrink: 0,
-      }}>
-        <button onClick={onBack} style={{
-          border: "none", background: "none", cursor: "pointer",
-          display: "flex", padding: "4px", color: "#6B7280",
-          borderRadius: "4px",
-        }}>
-          <ChevronLeft size={18} />
-        </button>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
-          <Sparkles size={14} style={{ color: "#2E75B6" }} />
-          <span style={{ fontSize: "14px", fontWeight: 600, color: "#111827" }}>Popup Health</span>
-        </div>
-        <button onClick={onBack} style={{
-          border: "none", background: "none", cursor: "pointer",
-          display: "flex", padding: "4px", color: "#9CA3AF",
-        }}>
-          <X size={14} />
-        </button>
-      </div>
-
-      {/* Scrollable body */}
+      {/* Single scrollable container — header & footer are sticky inside */}
       <div style={{
         flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
       }}>
+        {/* Sticky header with fade gradient below */}
+        <div style={{ position: "sticky", top: 0, zIndex: 10 }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: "8px",
+            padding: "14px 16px",
+            background: "#fff",
+          }}>
+            <button onClick={onBack} style={{
+              border: "none", background: "none", cursor: "pointer",
+              display: "flex", padding: "4px", color: "#6B7280",
+              borderRadius: "4px",
+            }}>
+              <ChevronLeft size={18} />
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
+              <Sparkles size={14} style={{ color: "#2E75B6" }} />
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#111827" }}>Popup Health</span>
+            </div>
+            <button onClick={onBack} style={{
+              border: "none", background: "none", cursor: "pointer",
+              display: "flex", padding: "4px", color: "#9CA3AF",
+            }}>
+              <X size={14} />
+            </button>
+          </div>
+          <div style={{
+            height: "16px",
+            background: "linear-gradient(to bottom, rgba(255,255,255,1), rgba(255,255,255,0))",
+            pointerEvents: "none",
+          }} />
+        </div>
+
         {/* Score header — tier-dependent */}
         {!isAllClear && (
           <>
             {tier === "ai" ? (
               /* AI tier: score ring + label */
-              <>
+              <div style={{
+                animation: "healthFadeUp 400ms ease-out both",
+              }}>
                 <div style={{
                   display: "flex", flexDirection: "column", alignItems: "center",
                   gap: "4px", padding: "20px 0 8px",
@@ -427,13 +451,14 @@ export function HealthPanel({
                 }}>
                   {5 - totalResolved} issue{5 - totalResolved !== 1 ? "s" : ""} · {passedChecks} checks passed
                 </div>
-              </>
+              </div>
             ) : (
               /* Standard tier: issue counter + segmented bar */
               <div style={{
                 display: "flex", flexDirection: "column", alignItems: "center",
                 gap: "12px", padding: "24px 24px 20px",
                 flexShrink: 0,
+                animation: "healthFadeUp 400ms ease-out both",
               }}>
                 <span style={{
                   fontSize: "18px", fontWeight: 700, color: "#111827",
@@ -486,22 +511,92 @@ export function HealthPanel({
             </p>
           </div>
         ) : (
-          /* Issue cards */
+          /* Issue cards — grouped by severity, stagger-animated */
           <div style={{
             display: "flex", flexDirection: "column", gap: "8px",
-            padding: "0 14px 14px", flex: 1,
+            padding: "0 14px 20px", flex: 1,
           }}>
-            {activeIssues.map((issue) => (
-              <IssueCard
-                key={issue.id}
-                issue={issue}
-                tier={tier}
-                isExpanded={expandedCard === issue.id}
-                onToggle={() => setExpandedCard(expandedCard === issue.id ? null : issue.id)}
-                onFix={() => onFixIssue(issue.id)}
-                onDismiss={() => onDismissIssue(issue.id)}
-              />
-            ))}
+            {(() => {
+              let cardIndex = 0
+              const criticalIssues = activeIssues.filter(i => i.severity === "fix")
+              const suggestionIssues = activeIssues.filter(i => i.severity === "improve")
+              return (
+                <>
+                  {criticalIssues.length > 0 && (
+                    <>
+                      <span style={{
+                        fontSize: "11px", fontWeight: 600, color: "#9CA3AF",
+                        textTransform: "uppercase", letterSpacing: "0.05em",
+                        padding: "0 2px", marginTop: "2px",
+                        opacity: revealedCount > 0 ? 1 : 0,
+                        transition: "opacity 300ms ease",
+                      }}>
+                        Critical
+                      </span>
+                      {criticalIssues.map((issue) => {
+                        const idx = cardIndex++
+                        return (
+                          <div
+                            key={issue.id}
+                            style={{
+                              opacity: revealedCount > idx ? 1 : 0,
+                              transform: revealedCount > idx ? "translateY(0)" : "translateY(12px)",
+                              transition: "opacity 350ms ease, transform 350ms ease",
+                            }}
+                          >
+                            <IssueCard
+                              issue={issue}
+                              tier={tier}
+                              isExpanded={expandedCard === issue.id}
+                              onToggle={() => setExpandedCard(expandedCard === issue.id ? null : issue.id)}
+                              onFix={() => onFixIssue(issue.id)}
+                              onDismiss={() => onDismissIssue(issue.id)}
+                            />
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
+
+                  {suggestionIssues.length > 0 && (
+                    <>
+                      <span style={{
+                        fontSize: "11px", fontWeight: 600, color: "#9CA3AF",
+                        textTransform: "uppercase", letterSpacing: "0.05em",
+                        padding: "0 2px",
+                        marginTop: criticalIssues.length > 0 ? "14px" : "2px",
+                        opacity: revealedCount > cardIndex ? 1 : 0,
+                        transition: "opacity 300ms ease",
+                      }}>
+                        Suggestions
+                      </span>
+                      {suggestionIssues.map((issue) => {
+                        const idx = cardIndex++
+                        return (
+                          <div
+                            key={issue.id}
+                            style={{
+                              opacity: revealedCount > idx ? 1 : 0,
+                              transform: revealedCount > idx ? "translateY(0)" : "translateY(12px)",
+                              transition: "opacity 350ms ease, transform 350ms ease",
+                            }}
+                          >
+                            <IssueCard
+                              issue={issue}
+                              tier={tier}
+                              isExpanded={expandedCard === issue.id}
+                              onToggle={() => setExpandedCard(expandedCard === issue.id ? null : issue.id)}
+                              onFix={() => onFixIssue(issue.id)}
+                              onDismiss={() => onDismissIssue(issue.id)}
+                            />
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
+                </>
+              )
+            })()}
           </div>
         )}
 
@@ -533,58 +628,85 @@ export function HealthPanel({
             )}
           </div>
         )}
-      </div>
 
-      {/* AI tier: "Fix all with AI" button — sticky bottom */}
-      {tier === "ai" && !isAllClear && (
-        <div style={{ flexShrink: 0, padding: "12px 14px" }}>
-          <button
-            onClick={onFixAllIssues}
-            disabled={!!isFixingAll}
-            style={{
-              width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-              padding: "12px", borderRadius: "10px", border: "none",
-              background: isFixingAll
-                ? "linear-gradient(135deg, #93c5fd, #67e8f9)"
-                : "linear-gradient(135deg, #2563eb, #06b6d4)",
-              color: "#fff", fontSize: "13px", fontWeight: 600,
-              cursor: isFixingAll ? "not-allowed" : "pointer",
-              transition: "opacity 200ms",
-              opacity: isFixingAll ? 0.7 : 1,
-            }}
-          >
-            <Zap size={15} />
-            {isFixingAll ? "Fixing all issues…" : "Fix all with AI"}
-          </button>
-        </div>
-      )}
-
-      {/* Upgrade banner — sticky bottom (Standard tier only) */}
-      {tier === "standard" && !isAllClear && (
-        <div style={{ flexShrink: 0, padding: "12px 14px" }}>
+        {/* AI tier: "Fix all" button — sticky bottom with fade gradient, reveals after cards */}
+        {tier === "ai" && !isAllClear && (
           <div style={{
-            padding: "14px 16px", borderRadius: "12px",
-            background: "#F9FAFB", border: "1px solid #E5E7EB",
+            position: "sticky", bottom: 0, zIndex: 10,
+            marginTop: "auto",
+            opacity: revealedCount >= 6 ? 1 : 0,
+            transform: revealedCount >= 6 ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 350ms ease, transform 350ms ease",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/Premium Icon.svg"
-                alt=""
-                style={{ width: "24px", height: "24px", flexShrink: 0 }}
-              />
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#111827" }}>
-                Unlock AI Fixes
-              </span>
-            </div>
-            <p style={{
-              fontSize: "12px", color: "#6B7280", margin: 0, lineHeight: 1.5,
+            {/* Fade gradient — content fades out smoothly */}
+            <div style={{
+              height: "24px",
+              background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
+              pointerEvents: "none",
+            }} />
+            <div style={{
+              padding: "0 14px 20px",
+              background: "#fff",
             }}>
-              Get data-backed insights and one-click AI fixes with the premium AI Health Panel.
-            </p>
+              <button
+                onClick={onFixAllIssues}
+                disabled={!!isFixingAll}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  padding: "12px", borderRadius: "10px", border: "none",
+                  background: isFixingAll
+                    ? "linear-gradient(135deg, #93c5fd, #67e8f9)"
+                    : "linear-gradient(135deg, #2563eb, #06b6d4)",
+                  color: "#fff", fontSize: "13px", fontWeight: 600,
+                  cursor: isFixingAll ? "not-allowed" : "pointer",
+                  transition: "opacity 200ms",
+                  opacity: isFixingAll ? 0.7 : 1,
+                }}
+              >
+                <Sparkles size={15} />
+                {isFixingAll ? "Applying all fixes…" : "Apply all fixes"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Upgrade banner — sticky bottom (Standard tier only) */}
+        {tier === "standard" && !isAllClear && (
+          <div style={{
+            position: "sticky", bottom: 0, zIndex: 10,
+            marginTop: "auto",
+          }}>
+            <div style={{
+              height: "24px",
+              background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
+              pointerEvents: "none",
+            }} />
+            <div style={{ padding: "0 14px 20px", background: "#fff" }}>
+              <div style={{
+                padding: "14px 16px", borderRadius: "12px",
+                background: "#F9FAFB", border: "1px solid #E5E7EB",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/Premium Icon.svg"
+                    alt=""
+                    style={{ width: "24px", height: "24px", flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#111827" }}>
+                    Unlock AI Fixes
+                  </span>
+                </div>
+                <p style={{
+                  fontSize: "12px", color: "#6B7280", margin: 0, lineHeight: 1.5,
+                }}>
+                  Get data-backed insights and one-click AI fixes with the premium AI Health Panel.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -364,8 +364,8 @@ function HealthBadge({
       const card = document.querySelector(".fixed.inset-0 .relative.z-10 .relative.overflow-hidden.bg-white") as HTMLElement
       if (card) {
         const rect = card.getBoundingClientRect()
-        // Place just outside the top-right corner — outward from the card
-        setPos({ x: rect.right + 24, y: rect.top - 20 })
+        // Place vertically centered on the card, 16px gap from card edge (+ half badge width 22px)
+        setPos({ x: rect.right + 38, y: rect.top + rect.height / 2 })
         setInitialized(true)
       } else {
         const canvasCenterX = 260 + (window.innerWidth - 260 - 380) / 2
@@ -491,7 +491,7 @@ function HealthBadge({
 
 // ── Outage Editor ─────────────────────────────────────────────────────────────
 function OutageEditor() {
-  const [tier, setTier] = useState<Tier>("ai")
+  const tier: Tier = "ai"
   const [fixedIssues, setFixedIssues] = useState<Set<IssueId>>(new Set())
   const [dismissedIssues, setDismissedIssues] = useState<Set<IssueId>>(new Set())
   const [panelView, setPanelView] = useState<"config" | "health">("config")
@@ -558,39 +558,98 @@ function OutageEditor() {
     <>
       <WhatfixSidebar activeId="widgets" />
 
-      {/* Tier toggle above canvas — centered between sidebar (260px) and panel (380px) */}
+      {/* Top bar — breadcrumb, title, tabs */}
       <div style={{
-        position: "fixed", top: "16px",
-        left: "calc(260px + (100vw - 260px - 380px) / 2)",
-        transform: "translateX(-50%)",
-        zIndex: 200, display: "flex",
-        background: "#f1f5f9", borderRadius: "10px", padding: "3px",
+        position: "fixed", top: 0, left: "260px", right: 0, zIndex: 150,
+        background: "#fff", borderBottom: "1px solid #E5E7EB",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}>
-        {(["ai", "standard"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTier(t)}
-            style={{
-              width: "130px", padding: "8px 0", border: "none", cursor: "pointer",
-              fontSize: "13px", fontWeight: 600, borderRadius: "8px",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-              background: tier === t ? "#fff" : "transparent",
-              color: tier === t ? "#111827" : "#9CA3AF",
-              boxShadow: tier === t ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-              transition: "all 200ms",
-            }}
-          >
-            {t === "ai" && <Sparkles size={13} style={{ color: tier === t ? "#2563eb" : "#9CA3AF" }} />}
-            {t === "ai" ? "AI Tier" : "Standard Tier"}
+        {/* Breadcrumb + title */}
+        <div style={{ padding: "12px 24px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#6B7280" }}>
+            <span style={{ color: "#2563EB", cursor: "pointer" }}>All content</span>
+            <span>/</span>
+            <span>Popup name 1</span>
+            <span style={{
+              marginLeft: "6px", padding: "1px 8px", borderRadius: "4px",
+              background: "#DCFCE7", color: "#16A34A", fontSize: "11px", fontWeight: 600,
+            }}>Editing</span>
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: "8px",
+            marginTop: "4px", paddingBottom: "12px",
+          }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ color: "#6B7280", flexShrink: 0 }}>
+              <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              <path d="M2 7h16" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <h1 style={{ fontSize: "18px", fontWeight: 700, color: "#111827", margin: 0 }}>
+              Popup name 1
+            </h1>
+          </div>
+        </div>
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: "0", padding: "0 24px" }}>
+          <button style={{
+            padding: "8px 16px", fontSize: "13px", fontWeight: 600, color: "#EA580C",
+            border: "none", background: "none", cursor: "pointer",
+            borderBottom: "2px solid #EA580C", marginBottom: "-1px",
+          }}>
+            Configurations
           </button>
-        ))}
+          <button style={{
+            padding: "8px 16px", fontSize: "13px", fontWeight: 500, color: "#6B7280",
+            border: "none", background: "none", cursor: "pointer",
+            borderBottom: "2px solid transparent", marginBottom: "-1px",
+          }}>
+            Visibility Rules
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom bar — Reset Demo (left) + Discard + Save (right) */}
+      <div style={{
+        position: "fixed", bottom: 0, left: "260px", right: 0, zIndex: 150,
+        background: "#fff", borderTop: "1px solid #E5E7EB",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "12px 24px",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}>
+        <button
+          onClick={handleReset}
+          style={{
+            display: "flex", alignItems: "center", gap: "6px",
+            padding: "8px 16px", borderRadius: "6px",
+            border: "1px solid #D1D5DB", background: "#fff",
+            color: "#6B7280", fontSize: "13px", fontWeight: 500, cursor: "pointer",
+          }}
+        >
+          <RotateCcw size={13} />
+          Reset Demo
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button style={{
+            padding: "8px 20px", borderRadius: "6px",
+            border: "1px solid #D1D5DB", background: "#fff",
+            color: "#374151", fontSize: "13px", fontWeight: 600, cursor: "pointer",
+          }}>
+            Discard
+          </button>
+          <button style={{
+            padding: "8px 20px", borderRadius: "6px",
+            border: "none", background: "#C2410C",
+            color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer",
+          }}>
+            Save
+          </button>
+        </div>
       </div>
 
       {/* Outage popup centered in canvas */}
       <OutagePopup
         fixedIssues={fixedIssues}
         scanningIssue={scanningIssue}
-        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[380px]"
+        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[380px] pt-[100px] pb-[60px]"
       />
 
       {/* Grammarly-style floating health badge — draggable on canvas */}
@@ -603,7 +662,7 @@ function OutageEditor() {
 
       {/* Right panel — no tabs, config by default, health on pill click */}
       <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0, width: "380px", zIndex: 100,
+        position: "fixed", top: "105px", right: 0, bottom: "53px", width: "380px", zIndex: 100,
         background: "#fff", borderLeft: "1px solid #E5E7EB",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         display: "flex", flexDirection: "column",
@@ -641,21 +700,6 @@ function OutageEditor() {
         {/* (Health badge is rendered on canvas, not inside panel) */}
       </div>
 
-      {/* Reset button — positioned above the FAB pill */}
-      <button
-        onClick={handleReset}
-        style={{
-          position: "fixed", bottom: "24px", left: "calc(260px + 24px)", zIndex: 200,
-          display: "flex", alignItems: "center", gap: "6px",
-          padding: "8px 16px", borderRadius: "20px",
-          background: "rgba(31,31,50,0.8)", color: "#fff",
-          border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500,
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        <RotateCcw size={13} />
-        Reset Demo
-      </button>
     </>
   )
 }

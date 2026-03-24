@@ -360,23 +360,30 @@ export function PromoPopup({
           } as React.CSSProperties : undefined}
         >
 
-          {/* Scan overlay — sits outside the scroll so it always covers the visible card */}
+          {/* Scan overlay */}
           {isScanning && (
             <div className="pointer-events-none absolute inset-0 z-30">
               <div className="absolute inset-0 bg-blue-950/50" />
               <div className="scan-beam" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-8 py-5 backdrop-blur-md">
-                  <div className="flex gap-1.5">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-2 w-2 animate-bounce rounded-full bg-blue-400"
-                        style={{ animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-semibold tracking-wide text-white">Analyzing &amp; rewriting content…</span>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "10px",
+                  padding: "12px 24px", borderRadius: "14px",
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(16px)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="animate-spin">
+                    <circle cx="8" cy="8" r="6" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
+                    <path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span style={{
+                    fontSize: "13px", fontWeight: 600, color: "#fff",
+                    letterSpacing: "0.01em",
+                  }}>
+                    Analyzing &amp; rewriting…
+                  </span>
                 </div>
               </div>
             </div>

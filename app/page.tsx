@@ -254,7 +254,7 @@ export default function DashboardPage() {
   const filtered = POPUPS.filter((p) =>
     p.tab === activeTab && p.name.toLowerCase().includes(search.toLowerCase())
   )
-  const FEATURED_IDS = new Set(["outage-alert", "feature-announce"])
+  const FEATURED_IDS = new Set(["outage-alert"])
   const visibleRows = showAllRows ? filtered : filtered.filter(p => FEATURED_IDS.has(p.id))
   const hiddenCount = filtered.length - filtered.filter(p => FEATURED_IDS.has(p.id)).length
 
@@ -357,7 +357,9 @@ export default function DashboardPage() {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <PopupIcon />
                       <span style={{ color: "#1F1F32", fontWeight: 500 }}>{popup.name}</span>
-                      <StatusPill status={popup.status} onClick={(e) => handlePillClick(e, popup)} />
+                      {!FEATURED_IDS.has(popup.id) && (
+                        <StatusPill status={popup.status} onClick={(e) => handlePillClick(e, popup)} />
+                      )}
                     </div>
                   </td>
                   <td style={{ padding: "12px" }}>

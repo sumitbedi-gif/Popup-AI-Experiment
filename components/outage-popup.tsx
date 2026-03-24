@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 
 // ── Content constants ────────────────────────────────────────────────────────
@@ -25,6 +26,12 @@ interface OutagePopupProps {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, children }: OutagePopupProps) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const bodyFixed = fixedIssues.has("body")
   const ctaFixed = fixedIssues.has("cta")
   const mediaFixed = fixedIssues.has("media")
@@ -48,6 +55,9 @@ export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, ch
             borderRadius: "14px",
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "scale(1)" : "scale(0.96)",
+            transition: "opacity 350ms cubic-bezier(0.2,0,0.2,1), transform 350ms cubic-bezier(0.2,0,0.2,1)",
           }}
         >
           {/* Scan overlay */}
@@ -56,34 +66,41 @@ export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, ch
               <div className="absolute inset-0 bg-blue-950/40" />
               <div className="scan-beam" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-7 py-4 backdrop-blur-md">
-                  <div className="flex gap-1.5">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-2 w-2 animate-bounce rounded-full bg-blue-400"
-                        style={{ animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-semibold tracking-wide text-white">
-                    Applying fix…
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "10px",
+                  padding: "12px 24px", borderRadius: "14px",
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(16px)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="animate-spin">
+                    <circle cx="8" cy="8" r="6" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
+                    <path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span style={{
+                    fontSize: "13px", fontWeight: 600, color: "#fff",
+                    letterSpacing: "0.01em",
+                  }}>
+                    Fixing with AI…
                   </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Close button */}
-          <button
-            className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            style={{ cursor: "default" }}
-          >
-            <X size={15} />
-          </button>
+          {/* Close button — only appears when checkbox issue is fixed */}
+          {checkboxFixed && (
+            <button
+              className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              style={{ cursor: "default" }}
+            >
+              <X size={15} />
+            </button>
+          )}
 
           {/* Scroll area */}
-          <div className="max-h-[520px] overflow-y-auto">
+          <div>
             {/* Media — shown only when media issue is fixed */}
             {mediaFixed && (
               <div
@@ -94,8 +111,8 @@ export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, ch
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/images/System outage copy.svg"
-                  alt="System outage warning"
+                  src="/images/Education icons.svg"
+                  alt="System maintenance"
                   style={{
                     height: "160px",
                     width: "auto",
@@ -139,11 +156,11 @@ export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, ch
               {/* CTA button */}
               <button
                 style={{
-                  marginTop: "8px",
-                  padding: ctaFixed ? "11px 24px" : "10px 32px",
+                  marginTop: "16px",
+                  padding: ctaFixed ? "12px 48px" : "10px 32px",
                   borderRadius: "8px",
                   border: "none",
-                  background: ctaFixed ? "#2563eb" : "#e5e7eb",
+                  background: ctaFixed ? "#1F2937" : "#e5e7eb",
                   color: ctaFixed ? "#fff" : "#374151",
                   fontSize: "14px",
                   fontWeight: 600,
@@ -154,28 +171,6 @@ export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, ch
                 {displayCta}
               </button>
 
-              {/* Don't show again checkbox — appears when checkbox issue is fixed */}
-              {checkboxFixed && (
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    fontSize: "12px",
-                    color: "#6b7280",
-                    marginTop: "4px",
-                    cursor: "default",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    defaultChecked={false}
-                    style={{ cursor: "default", accentColor: "#2563eb" }}
-                  />
-                  Don&apos;t show me again
-                </label>
-              )}
             </div>
           </div>
         </div>
