@@ -163,15 +163,15 @@ function CelebrationIllustration() {
 
 // ── Severity badge ───────────────────────────────────────────────────────────
 function SeverityBadge({ severity }: { severity: "fix" | "improve" }) {
-  const isFix = severity === "fix"
+  const isCritical = severity === "fix"
   return (
     <span style={{
       display: "inline-flex", alignItems: "center",
       padding: "1px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: 600,
-      background: isFix ? "#FEE2E2" : "#FEF3C7",
-      color: isFix ? "#991B1B" : "#92400E",
+      background: isCritical ? "#FEE2E2" : "#FEF3C7",
+      color: isCritical ? "#991B1B" : "#92400E",
     }}>
-      {isFix ? "Fix" : "Improve"}
+      {isCritical ? "Critical" : "Suggestion"}
     </span>
   )
 }
@@ -195,6 +195,7 @@ function IssueCard({
       className="issue-card"
       style={{
         border: "1px solid #E5E7EB", borderRadius: "10px",
+        borderLeft: issue.severity === "fix" ? "3px solid #EF4444" : "3px solid #F59E0B",
         background: "#fff",
       }}
     >
