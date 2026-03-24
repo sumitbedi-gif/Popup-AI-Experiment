@@ -353,7 +353,7 @@ function HealthBadge({
   // Scan animation — runs on mount and when scanTrigger changes
   useEffect(() => {
     setScanning(true)
-    const t = setTimeout(() => setScanning(false), 2000)
+    const t = setTimeout(() => setScanning(false), 1200)
     return () => clearTimeout(t)
   }, [scanTrigger])
 
@@ -364,8 +364,8 @@ function HealthBadge({
       const card = document.querySelector(".fixed.inset-0 .relative.z-10 .relative.overflow-hidden.bg-white") as HTMLElement
       if (card) {
         const rect = card.getBoundingClientRect()
-        // Place just outside the bottom-right corner — slightly beside, not overlapping
-        setPos({ x: rect.right + 28, y: rect.bottom - 16 })
+        // Place just outside the top-right corner — outward from the card
+        setPos({ x: rect.right + 24, y: rect.top - 20 })
         setInitialized(true)
       } else {
         const canvasCenterX = 260 + (window.innerWidth - 260 - 380) / 2

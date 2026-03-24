@@ -9,7 +9,7 @@ const ORIGINAL_BODY =
 const ORIGINAL_CTA = "OK"
 
 const FIXED_BODY =
-  "Scheduled maintenance on Jan 25, 2:00–6:00 AM EST. All services will be temporarily unavailable. Save your work before the window begins."
+  "Scheduled maintenance on Jan 25, 2:00\u20136:00 AM EST. All services will be temporarily unavailable. Please save your work beforehand."
 const FIXED_CTA = "View Status Page"
 
 // ── Types ────────────────────────────────────────────────────────────────────
