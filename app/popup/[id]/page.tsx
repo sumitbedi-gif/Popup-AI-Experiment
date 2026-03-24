@@ -337,10 +337,11 @@ function ConfigPanel({
 
 // ── Grammarly-style draggable health badge ───────────────────────────────────
 function HealthBadge({
-  issueCount, isAllClear, onClick,
+  issueCount, isAllClear, onClick, scanTrigger,
 }: {
-  issueCount: number; isAllClear: boolean; onClick: () => void
+  issueCount: number; isAllClear: boolean; onClick: () => void; scanTrigger: number
 }) {
+  const [scanning, setScanning] = useState(true)
   // Position: anchored to bottom-right corner of the popup card
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const [initialized, setInitialized] = useState(false)
@@ -348,6 +349,13 @@ function HealthBadge({
   const dragOffset = useRef({ x: 0, y: 0 })
   const didDrag = useRef(false)
   const badgeRef = useRef<HTMLDivElement>(null)
+
+  // Scan animation — runs on mount and when scanTrigger changes
+  useEffect(() => {
+    setScanning(true)
+    const t = setTimeout(() => setScanning(false), 2000)
+    return () => clearTimeout(t)
+  }, [scanTrigger])
 
   // Find the popup card and anchor to its bottom-right corner
   useEffect(() => {
@@ -456,7 +464,14 @@ function HealthBadge({
         e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)"
       }}
     >
-      {isAllClear ? (
+      {scanning ? (
+        <svg className="animate-spin" width="20" height="20" viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="8" fill="none" stroke="#FEE2E2" strokeWidth="2.5" />
+          <circle cx="10" cy="10" r="8" fill="none" stroke="#EF4444" strokeWidth="2.5"
+            strokeDasharray="50.26" strokeDashoffset="37.7" strokeLinecap="round"
+          />
+        </svg>
+      ) : isAllClear ? (
         <CheckCircle2 size={20} style={{ color: "#fff" }} />
       ) : (
         <div style={{
@@ -482,6 +497,7 @@ function OutageEditor() {
   const [panelView, setPanelView] = useState<"config" | "health">("config")
   const [scanningIssue, setScanningIssue] = useState<IssueId | null>(null)
   const [isFixingAll, setIsFixingAll] = useState(false)
+  const [badgeScanTrigger, setBadgeScanTrigger] = useState(0)
   const fixAllTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const totalResolved = fixedIssues.size + dismissedIssues.size
@@ -535,6 +551,7 @@ function OutageEditor() {
     setScanningIssue(null)
     setIsFixingAll(false)
     setPanelView("config")
+    setBadgeScanTrigger(n => n + 1)
   }, [])
 
   return (
@@ -581,6 +598,7 @@ function OutageEditor() {
         issueCount={issueCount}
         isAllClear={isAllClear}
         onClick={() => setPanelView("health")}
+        scanTrigger={badgeScanTrigger}
       />
 
       {/* Right panel — no tabs, config by default, health on pill click */}

@@ -347,3 +347,11 @@
   animation: sparkleIn 0.4s ease-out forwards;
   opacity: 0;
 }
+
+/* Health badge spinner */
+@keyframes badgeSpin {
+  to { transform: rotate(360deg); }
+}
+.health-badge-spinner {
+  animation: badgeSpin 0.8s linear infinite;
+}
