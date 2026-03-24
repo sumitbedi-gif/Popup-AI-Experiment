@@ -474,35 +474,59 @@ function OutageEditor() {
           )}
         </div>
 
-        {/* Issues pill — pinned to bottom of panel, hidden when health panel is open */}
+        {/* Health toast — pinned to bottom of panel, hidden when health panel is open */}
         {panelView !== "health" && (
-          <div style={{
-            flexShrink: 0, padding: "16px",
-            display: "flex", justifyContent: "center",
-            background: "linear-gradient(to top, #F9FAFB, #ffffff)",
-            borderTop: "1px solid #ECECF3",
-          }}>
+          <div style={{ flexShrink: 0, padding: "12px 14px", borderTop: "1px solid #ECECF3" }}>
             <button
               onClick={() => setPanelView("health")}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: "10px",
+                padding: "12px 14px", borderRadius: "10px", border: "none",
+                cursor: "pointer", textAlign: "left",
+                background: isAllClear ? "#ECFDF5" : "#FFF7ED",
+                transition: "box-shadow 150ms ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)" }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "none" }}
             >
               {isAllClear ? (
-                <span className="pill-celebrate flex items-center gap-2 rounded-full border border-green-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-600"
-                  style={{ boxShadow: "0 2px 12px rgba(16,185,129,0.15)" }}
-                >
-                  <CheckCircle2 size={15} />
-                  No issues found
-                </span>
-              ) : (
-                <span className="ai-pill-wrapper" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)", borderRadius: "9999px" }}>
-                  <span className="ai-spin-border" />
-                  <span className="relative z-10 flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-800">
-                    Issues Found
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
-                      {issueCount}
-                    </span>
+                <>
+                  <div style={{
+                    width: "28px", height: "28px", borderRadius: "8px",
+                    background: "#D1FAE5", display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <CheckCircle2 size={15} style={{ color: "#059669" }} />
+                  </div>
+                  <span style={{ flex: 1, fontSize: "13px", fontWeight: 600, color: "#065F46" }}>
+                    All issues resolved
                   </span>
-                </span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#059669", whiteSpace: "nowrap" }}>
+                    View &rarr;
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    width: "28px", height: "28px", borderRadius: "8px",
+                    background: "linear-gradient(135deg, #FDE68A, #FDBA74)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <Sparkles size={14} style={{ color: "#92400E" }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#78350F" }}>
+                      {issueCount} issue{issueCount !== 1 ? "s" : ""} found in this popup
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: "12px", fontWeight: 600, color: "#B45309",
+                    whiteSpace: "nowrap",
+                  }}>
+                    Review &rarr;
+                  </span>
+                </>
               )}
             </button>
           </div>
