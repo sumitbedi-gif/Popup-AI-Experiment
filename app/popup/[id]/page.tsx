@@ -539,6 +539,25 @@ function OutageEditor() {
     })
   }, [fixedIssues, dismissedIssues])
 
+  const handleFixSelectedIssues = useCallback((ids: IssueId[]) => {
+    if (ids.length === 0) return
+    setIsFixingAll(true)
+    setScanningIssue(ids[0])
+    ids.forEach((id, idx) => {
+      fixAllTimers.current.push(
+        setTimeout(() => {
+          setFixedIssues(prev => new Set(prev).add(id))
+          if (idx === ids.length - 1) {
+            setTimeout(() => {
+              setScanningIssue(null)
+              setIsFixingAll(false)
+            }, 400)
+          }
+        }, 800 + idx * 600),
+      )
+    })
+  }, [])
+
   const handleDismissIssue = useCallback((id: IssueId) => {
     setDismissedIssues(prev => new Set(prev).add(id))
   }, [])
@@ -690,6 +709,7 @@ function OutageEditor() {
               tier={tier}
               onFixIssue={handleFixIssue}
               onFixAllIssues={handleFixAllIssues}
+              onFixSelectedIssues={handleFixSelectedIssues}
               onDismissIssue={handleDismissIssue}
               onBack={() => setPanelView("config")}
               isFixingAll={isFixingAll}

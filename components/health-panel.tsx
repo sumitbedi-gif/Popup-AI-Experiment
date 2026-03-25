@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import {
   ChevronDown, ChevronUp, ChevronLeft, Sparkles,
   AlignLeft, MousePointerClick, ImageIcon, Eye,
-  X,
+  X, Check, ThumbsUp, ThumbsDown,
 } from "lucide-react"
 import type { IssueId } from "./outage-popup"
 
@@ -178,24 +178,33 @@ function SeverityBadge({ severity }: { severity: "fix" | "improve" }) {
 
 // ── Issue card ───────────────────────────────────────────────────────────────
 function IssueCard({
-  issue, tier, isExpanded, onToggle, onFix, onDismiss,
+  issue, tier, isExpanded, isSelected, onToggle, onSelect, onFix, onDismiss,
 }: {
   issue: HealthIssue
   tier: Tier
   isExpanded: boolean
+  isSelected: boolean
   onToggle: () => void
+  onSelect: () => void
   onFix: () => void
   onDismiss: () => void
 }) {
   const { Icon } = issue
   const [showTooltip, setShowTooltip] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+
+  const showCheckbox = isHovered || isSelected
 
   return (
     <div
       className="issue-card"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
-        border: "1px solid #D1D5DB", borderRadius: "10px",
-        background: "#fff",
+        border: `1px solid ${isSelected ? "#93C5FD" : "#D1D5DB"}`,
+        borderRadius: "10px",
+        background: isSelected ? "#F0F7FF" : "#fff",
+        transition: "border-color 150ms ease, background 150ms ease",
       }}
     >
       {/* Header */}
@@ -207,7 +216,25 @@ function IssueCard({
           textAlign: "left",
         }}
       >
-        <span style={{ color: "#6B7280", flexShrink: 0, display: "flex" }}><Icon size={16} /></span>
+        {/* Icon / checkbox toggle */}
+        <span
+          onClick={(e) => { e.stopPropagation(); onSelect() }}
+          style={{ flexShrink: 0, display: "flex", width: 16, height: 16 }}
+        >
+          {showCheckbox ? (
+            <span style={{
+              width: 16, height: 16, borderRadius: "4px", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: isSelected ? "none" : "1.5px solid #9CA3AF",
+              background: isSelected ? "#2563EB" : "transparent",
+              transition: "all 150ms ease",
+            }}>
+              {isSelected && <Check size={10} color="#fff" strokeWidth={3} />}
+            </span>
+          ) : (
+            <span style={{ color: "#6B7280", display: "flex" }}><Icon size={16} /></span>
+          )}
+        </span>
         <span style={{
           flex: 1, fontSize: "13px", fontWeight: 500, color: "#111827",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
@@ -338,17 +365,29 @@ interface HealthPanelProps {
   tier: Tier
   onFixIssue: (id: IssueId) => void
   onFixAllIssues: () => void
+  onFixSelectedIssues: (ids: IssueId[]) => void
   onDismissIssue: (id: IssueId) => void
   onBack: () => void
   isFixingAll?: boolean
 }
 
 export function HealthPanel({
-  fixedIssues, dismissedIssues, tier, onFixIssue, onFixAllIssues, onDismissIssue, onBack, isFixingAll,
+  fixedIssues, dismissedIssues, tier, onFixIssue, onFixAllIssues, onFixSelectedIssues, onDismissIssue, onBack, isFixingAll,
 }: HealthPanelProps) {
   const [expandedCard, setExpandedCard] = useState<IssueId | null>(null)
   const [showDismissed, setShowDismissed] = useState(false)
   const [revealedCount, setRevealedCount] = useState(0)
+  const [selectedIssues, setSelectedIssues] = useState<Set<IssueId>>(new Set())
+  const [feedbackGiven, setFeedbackGiven] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
+
+  const toggleSelected = (id: IssueId) => {
+    setSelectedIssues(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   // Stagger-reveal: score ring → cards one by one → fix all button
   useEffect(() => {
@@ -371,6 +410,15 @@ export function HealthPanel({
   const totalResolved = fixedIssues.size + dismissedIssues.size
   const { score, label, color } = SCORE_MAP[Math.min(fixedCount, 5)]
   const isAllClear = totalResolved >= 5
+
+  useEffect(() => {
+    if (isAllClear) {
+      const t = setTimeout(() => setShowFeedback(true), 1000)
+      return () => clearTimeout(t)
+    } else {
+      setShowFeedback(false)
+    }
+  }, [isAllClear])
 
   const totalChecks = tier === "ai" ? 19 : 10
   const passedChecks = totalChecks - (5 - totalResolved)
@@ -477,39 +525,106 @@ export function HealthPanel({
           </>
         )}
 
-        {/* All clear state — celebration illustration centered */}
+        {/* All clear state */}
         {isAllClear ? (
-          <div style={{
-            flex: 1, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            padding: "0 40px 60px", textAlign: "center",
-          }}>
-            <CelebrationIllustration />
-            <h3 style={{
-              fontSize: "18px", fontWeight: 700, color: "#111827",
-              margin: "0 0 8px", letterSpacing: "-0.01em",
+          <>
+            {/* Centered content */}
+            <div style={{
+              flex: 1, display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              padding: "0 40px 24px", textAlign: "center",
             }}>
-              {tier === "standard" ? standardAllClearText : "All clear!"}
-            </h3>
-            {tier === "standard" && (
-              <div style={{ width: "60%", marginBottom: "12px" }}>
-                <SegmentedProgress fixedCount={fixedCount} />
-              </div>
-            )}
-            <p style={{
-              fontSize: "13px", color: "#9CA3AF", margin: 0, lineHeight: 1.6,
-            }}>
-              {tier === "ai" ? (
-                dismissedList.length > 0
-                  ? `No remaining issues. You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
-                  : "Your popup follows all best practices."
-              ) : (
-                dismissedList.length > 0
-                  ? `You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
-                  : "All issues have been resolved."
+              <CelebrationIllustration />
+              <h3 style={{
+                fontSize: "18px", fontWeight: 700, color: "#111827",
+                margin: "0 0 8px", letterSpacing: "-0.01em",
+              }}>
+                {tier === "standard" ? standardAllClearText : "All clear!"}
+              </h3>
+              {tier === "standard" && (
+                <div style={{ width: "60%", marginBottom: "12px" }}>
+                  <SegmentedProgress fixedCount={fixedCount} />
+                </div>
               )}
-            </p>
-          </div>
+              <p style={{ fontSize: "13px", color: "#9CA3AF", margin: 0, lineHeight: 1.6 }}>
+                {tier === "ai" ? (
+                  dismissedList.length > 0
+                    ? `No remaining issues. You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
+                    : "Your popup follows all best practices."
+                ) : (
+                  dismissedList.length > 0
+                    ? `You dismissed ${dismissedList.length} suggestion${dismissedList.length !== 1 ? "s" : ""}.`
+                    : "All issues have been resolved."
+                )}
+              </p>
+            </div>
+
+            {/* Feedback banner — slides in 1s after all-clear */}
+            <div style={{
+              position: "sticky", bottom: 0, zIndex: 10,
+              opacity: showFeedback ? 1 : 0,
+              transform: showFeedback ? "translateY(0)" : "translateY(16px)",
+              transition: "opacity 400ms ease, transform 400ms ease",
+              pointerEvents: showFeedback ? "auto" : "none",
+            }}>
+              <div style={{
+                height: "20px",
+                background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
+                pointerEvents: "none",
+              }} />
+              <div style={{ padding: "0 14px 20px", background: "#fff" }}>
+                <div style={{
+                  padding: "11px 14px", borderRadius: "10px",
+                  background: "#F9FAFB", border: "1px solid #E5E7EB",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}>
+                  {feedbackGiven ? (
+                    <>
+                      <span style={{ fontSize: "12px", color: "#6B7280", flex: 1 }}>
+                        Thanks for the feedback!
+                      </span>
+                      <button
+                        onClick={() => setFeedbackGiven(false)}
+                        style={{ border: "none", background: "none", cursor: "pointer", padding: "2px", color: "#9CA3AF", display: "flex" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: "12px", color: "#6B7280" }}>How did we do?</span>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button
+                          onClick={() => setFeedbackGiven(true)}
+                          style={{
+                            border: "1px solid #E5E7EB", background: "#fff", borderRadius: "6px",
+                            padding: "5px 8px", cursor: "pointer", display: "flex", color: "#6B7280",
+                            transition: "background 150ms, color 150ms",
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F0FDF4"; (e.currentTarget as HTMLButtonElement).style.color = "#16A34A"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#BBF7D0" }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; (e.currentTarget as HTMLButtonElement).style.color = "#6B7280"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#E5E7EB" }}
+                        >
+                          <ThumbsUp size={13} />
+                        </button>
+                        <button
+                          onClick={() => setFeedbackGiven(true)}
+                          style={{
+                            border: "1px solid #E5E7EB", background: "#fff", borderRadius: "6px",
+                            padding: "5px 8px", cursor: "pointer", display: "flex", color: "#6B7280",
+                            transition: "background 150ms, color 150ms",
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#FFF7ED"; (e.currentTarget as HTMLButtonElement).style.color = "#EA580C"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#FED7AA" }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; (e.currentTarget as HTMLButtonElement).style.color = "#6B7280"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#E5E7EB" }}
+                        >
+                          <ThumbsDown size={13} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
         ) : (
           /* Issue cards — grouped by severity, stagger-animated */
           <div style={{
@@ -548,7 +663,9 @@ export function HealthPanel({
                               issue={issue}
                               tier={tier}
                               isExpanded={expandedCard === issue.id}
+                              isSelected={selectedIssues.has(issue.id)}
                               onToggle={() => setExpandedCard(expandedCard === issue.id ? null : issue.id)}
+                              onSelect={() => toggleSelected(issue.id)}
                               onFix={() => onFixIssue(issue.id)}
                               onDismiss={() => onDismissIssue(issue.id)}
                             />
@@ -585,7 +702,9 @@ export function HealthPanel({
                               issue={issue}
                               tier={tier}
                               isExpanded={expandedCard === issue.id}
+                              isSelected={selectedIssues.has(issue.id)}
                               onToggle={() => setExpandedCard(expandedCard === issue.id ? null : issue.id)}
+                              onSelect={() => toggleSelected(issue.id)}
                               onFix={() => onFixIssue(issue.id)}
                               onDismiss={() => onDismissIssue(issue.id)}
                             />
@@ -629,7 +748,7 @@ export function HealthPanel({
           </div>
         )}
 
-        {/* AI tier: "Fix all" button — sticky bottom with fade gradient, reveals after cards */}
+        {/* AI tier: bottom buttons — sticky, reveals after cards */}
         {tier === "ai" && !isAllClear && (
           <div style={{
             position: "sticky", bottom: 0, zIndex: 10,
@@ -638,18 +757,21 @@ export function HealthPanel({
             transform: revealedCount >= 6 ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 350ms ease, transform 350ms ease",
           }}>
-            {/* Fade gradient — content fades out smoothly */}
             <div style={{
               height: "24px",
               background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
               pointerEvents: "none",
             }} />
-            <div style={{
-              padding: "0 14px 20px",
-              background: "#fff",
-            }}>
+            <div style={{ padding: "0 14px 20px", background: "#fff" }}>
               <button
-                onClick={onFixAllIssues}
+                onClick={() => {
+                  if (selectedIssues.size > 0) {
+                    onFixSelectedIssues(Array.from(selectedIssues))
+                    setSelectedIssues(new Set())
+                  } else {
+                    onFixAllIssues()
+                  }
+                }}
                 disabled={!!isFixingAll}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
@@ -664,7 +786,11 @@ export function HealthPanel({
                 }}
               >
                 <Sparkles size={15} />
-                {isFixingAll ? "Applying all fixes…" : "Apply all fixes"}
+                {isFixingAll
+                  ? "Applying fixes…"
+                  : selectedIssues.size > 0
+                    ? `Apply ${selectedIssues.size} fix${selectedIssues.size !== 1 ? "es" : ""}`
+                    : "Apply all fixes"}
               </button>
             </div>
           </div>
