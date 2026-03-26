@@ -492,6 +492,7 @@ function HealthBadge({
 // ── Outage Editor ─────────────────────────────────────────────────────────────
 function OutageEditor() {
   const tier: Tier = "ai"
+  const [sidebarWidth, setSidebarWidth] = useState(260)
   const [fixedIssues, setFixedIssues] = useState<Set<IssueId>>(new Set())
   const [dismissedIssues, setDismissedIssues] = useState<Set<IssueId>>(new Set())
   const [panelView, setPanelView] = useState<"config" | "health">("config")
@@ -575,12 +576,13 @@ function OutageEditor() {
 
   return (
     <>
-      <WhatfixSidebar activeId="widgets" />
+      <WhatfixSidebar activeId="widgets" onCollapse={(c) => setSidebarWidth(c ? 68 : 260)} />
 
       {/* Top bar — breadcrumb, title, tabs */}
       <div style={{
-        position: "fixed", top: 0, left: "260px", right: 0, zIndex: 150,
+        position: "fixed", top: 0, left: sidebarWidth, right: 0, zIndex: 150,
         background: "#fff", borderBottom: "1px solid #E5E7EB",
+        transition: "left 200ms",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}>
         {/* Breadcrumb + title */}
@@ -628,7 +630,8 @@ function OutageEditor() {
 
       {/* Bottom bar — Reset Demo (left) + Discard + Save (right) */}
       <div style={{
-        position: "fixed", bottom: 0, left: "260px", right: 0, zIndex: 150,
+        position: "fixed", bottom: 0, left: sidebarWidth, right: 0, zIndex: 150,
+        transition: "left 200ms",
         background: "#fff", borderTop: "1px solid #E5E7EB",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "12px 24px",
@@ -668,7 +671,12 @@ function OutageEditor() {
       <OutagePopup
         fixedIssues={fixedIssues}
         scanningIssue={scanningIssue}
-        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 pl-[260px] pr-[380px] pt-[100px] pb-[60px]"
+        containerClassName="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4"
+        containerStyle={{
+          paddingLeft: sidebarWidth, paddingRight: 380,
+          paddingTop: 100, paddingBottom: 60,
+          transition: "padding-left 200ms",
+        }}
       />
 
       {/* Grammarly-style floating health badge — draggable on canvas */}
@@ -682,6 +690,7 @@ function OutageEditor() {
       {/* Right panel — no tabs, config by default, health on pill click */}
       <div style={{
         position: "fixed", top: "105px", right: 0, bottom: "53px", width: "380px", zIndex: 100,
+        transition: "left 200ms",
         background: "#fff", borderLeft: "1px solid #E5E7EB",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         display: "flex", flexDirection: "column",

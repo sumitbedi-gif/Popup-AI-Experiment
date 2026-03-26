@@ -31,7 +31,7 @@ const BOTTOM_ITEMS: NavItem[] = [
   { id: "chat",          label: "Chat",          Icon: MessageSquare,  href: "#" },
 ]
 
-export function WhatfixSidebar({ activeId = "widgets" }: { activeId?: string }) {
+export function WhatfixSidebar({ activeId = "widgets", onCollapse }: { activeId?: string; onCollapse?: (collapsed: boolean) => void }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -52,7 +52,7 @@ export function WhatfixSidebar({ activeId = "widgets" }: { activeId?: string }) 
       {/* Collapse toggle */}
       <button
         className="sidebar-collapse-btn"
-        onClick={() => setIsCollapsed(!isCollapsed)}
+        onClick={() => { const next = !isCollapsed; setIsCollapsed(next); onCollapse?.(next) }}
         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {isCollapsed

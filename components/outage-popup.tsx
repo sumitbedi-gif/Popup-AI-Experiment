@@ -21,11 +21,12 @@ interface OutagePopupProps {
   /** Currently scanning issue (shows overlay animation) */
   scanningIssue?: IssueId | null
   containerClassName?: string
+  containerStyle?: React.CSSProperties
   children?: React.ReactNode
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, children }: OutagePopupProps) {
+export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, containerStyle, children }: OutagePopupProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true))
@@ -43,7 +44,7 @@ export function OutagePopup({ fixedIssues, scanningIssue, containerClassName, ch
   const bodyColor = contrastFixed ? "#333333" : "#999999"
 
   return (
-    <div className={containerClassName ?? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-4"}>
+    <div className={containerClassName ?? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-4"} style={containerStyle}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/8 backdrop-blur-[2px]" aria-hidden="true" />
 
